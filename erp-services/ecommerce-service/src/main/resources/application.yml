@@ -1,0 +1,57 @@
+server:
+  port: 3032
+
+spring:
+  application:
+    name: ecommerce-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: ecommerce
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 2
+      timeout: 2000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.ecommerce: INFO
+
+# Stripe Configuration
+stripe:
+  api-key: ${STRIPE_SECRET_KEY:sk_test_your_stripe_secret_key}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_your_webhook_secret}
+
+# E-commerce specific configuration
+ecommerce:
+  default-currency: USD
+  supported-currencies: USD,EUR,GBP,JPY,CNY,VND
+  cart:
+    expiry-hours: 24
+  inventory:
+    low-stock-threshold: 10

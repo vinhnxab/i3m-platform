@@ -1,0 +1,54 @@
+server:
+  port: 3033
+
+spring:
+  application:
+    name: crm-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: crm
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 3
+      timeout: 2000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.crm: INFO
+
+# CRM specific configuration
+crm:
+  hubspot:
+    api-key: ${HUBSPOT_API_KEY:your_hubspot_api_key}
+    enabled: false
+  lead:
+    auto-assignment: true
+    follow-up-days: 7
+  pipeline:
+    default-stages: "New,Qualified,Proposal,Negotiation,Closed Won,Closed Lost"

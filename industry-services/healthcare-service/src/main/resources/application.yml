@@ -1,0 +1,66 @@
+server:
+  port: 3034
+
+spring:
+  application:
+    name: healthcare-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: healthcare
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 4
+      timeout: 2000ms
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:3008
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.healthcare: INFO
+    org.springframework.security: DEBUG
+
+# Healthcare specific configuration
+healthcare:
+  hipaa:
+    enabled: true
+    audit-logging: true
+    encryption-required: true
+  patient:
+    records-retention-years: 7
+    anonymization-after-years: 10
+  compliance:
+    standards: "HIPAA,HITECH,FDA"
+    audit-frequency-hours: 24
+  integration:
+    ehr-systems: "Epic,Cerner,Allscripts"
+    hl7-version: "2.8"

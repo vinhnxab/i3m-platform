@@ -1,0 +1,257 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: i3m-platform-ingress
+  namespace: i3m-platform
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+  - host: i3m-platform.local
+    http:
+      paths:
+      # Core Services
+      - path: /api/v1/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3008
+      - path: /api/v1/users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3009
+      
+      # ERP Services
+      - path: /api/v1/finance
+        pathType: Prefix
+        backend:
+          service:
+            name: finance-service
+            port:
+              number: 3028
+      - path: /api/v1/hrm
+        pathType: Prefix
+        backend:
+          service:
+            name: hrm-service
+            port:
+              number: 3029
+      - path: /api/v1/inventory
+        pathType: Prefix
+        backend:
+          service:
+            name: inventory-service
+            port:
+              number: 3030
+      - path: /api/v1/procurement
+        pathType: Prefix
+        backend:
+          service:
+            name: procurement-service
+            port:
+              number: 3031
+      - path: /api/v1/ecommerce
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-service
+            port:
+              number: 3032
+      - path: /api/v1/crm
+        pathType: Prefix
+        backend:
+          service:
+            name: crm-service
+            port:
+              number: 3033
+      
+      # Analytics Services
+      - path: /api/v1/ai
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-service
+            port:
+              number: 3017
+      - path: /api/v1/ml-pipeline
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-pipeline-service
+            port:
+              number: 3018
+      - path: /api/v1/analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 3019
+      - path: /api/v1/user-analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: user-analytics-service
+            port:
+              number: 3020
+      
+      # Content Services
+      - path: /api/v1/content
+        pathType: Prefix
+        backend:
+          service:
+            name: content-service
+            port:
+              number: 3021
+      - path: /api/v1/media
+        pathType: Prefix
+        backend:
+          service:
+            name: media-service
+            port:
+              number: 3022
+      - path: /api/v1/metadata
+        pathType: Prefix
+        backend:
+          service:
+            name: metadata-service
+            port:
+              number: 3023
+      
+      # Industry Services
+      - path: /api/v1/healthcare
+        pathType: Prefix
+        backend:
+          service:
+            name: healthcare-service
+            port:
+              number: 3034
+      - path: /api/v1/agriculture
+        pathType: Prefix
+        backend:
+          service:
+            name: agriculture-service
+            port:
+              number: 3035
+      
+      # Infrastructure Services
+      - path: /api/v1/security
+        pathType: Prefix
+        backend:
+          service:
+            name: security-service
+            port:
+              number: 3040
+      - path: /api/v1/observability
+        pathType: Prefix
+        backend:
+          service:
+            name: observability-service
+            port:
+              number: 3041
+      - path: /api/v1/cost-optimization
+        pathType: Prefix
+        backend:
+          service:
+            name: cost-optimization-service
+            port:
+              number: 3042
+      - path: /api/v1/load-balancer
+        pathType: Prefix
+        backend:
+          service:
+            name: load-balancer-service
+            port:
+              number: 3043
+      - path: /api/v1/secrets
+        pathType: Prefix
+        backend:
+          service:
+            name: secrets-management-service
+            port:
+              number: 3044
+      
+      # Integration Services
+      - path: /api/v1/api-docs
+        pathType: Prefix
+        backend:
+          service:
+            name: api-documentation-service
+            port:
+              number: 3050
+      - path: /api/v1/integration
+        pathType: Prefix
+        backend:
+          service:
+            name: integration-service
+            port:
+              number: 3051
+      - path: /api/v1/currency
+        pathType: Prefix
+        backend:
+          service:
+            name: currency-exchange-service
+            port:
+              number: 3052
+      
+      # Marketplace Services
+      - path: /api/v1/templates
+        pathType: Prefix
+        backend:
+          service:
+            name: template-marketplace-service
+            port:
+              number: 3060
+      - path: /api/v1/template-install
+        pathType: Prefix
+        backend:
+          service:
+            name: installation-service
+            port:
+              number: 3061
+      - path: /api/v1/template-preview
+        pathType: Prefix
+        backend:
+          service:
+            name: preview-service
+            port:
+              number: 3062
+      
+      # Shared Services
+      - path: /api/v1/notifications
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 3070
+      - path: /api/v1/workflow
+        pathType: Prefix
+        backend:
+          service:
+            name: workflow-service
+            port:
+              number: 3071
+      - path: /api/v1/billing
+        pathType: Prefix
+        backend:
+          service:
+            name: billing-service
+            port:
+              number: 3072
+      
+      # Default route to API Gateway
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 3004

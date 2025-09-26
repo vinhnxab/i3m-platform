@@ -1,0 +1,779 @@
+services:
+  # ===================
+  # DATABASES
+  # ===================
+  
+  # PostgreSQL 15 - Primary database for ACID transactions
+  postgres:
+    image: postgres:15-alpine
+    container_name: i3m-postgres
+    environment:
+      POSTGRES_DB: i3m_platform
+      POSTGRES_USER: i3m_user
+      POSTGRES_PASSWORD: i3m_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared/sql/init:/docker-entrypoint-initdb.d
+    networks:
+      - i3m-network
+
+  # MongoDB 7.0 - Document database for unstructured data
+  mongodb:
+    image: mongo:7.0
+    container_name: i3m-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: i3m_user
+      MONGO_INITDB_ROOT_PASSWORD: i3m_password
+      MONGO_INITDB_DATABASE: i3m_platform
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./shared/mongodb/init:/docker-entrypoint-initdb.d
+    networks:
+      - i3m-network
+
+  # Redis 7.0 - Caching and session storage
+  redis:
+    image: redis:7.0-alpine
+    container_name: i3m-redis
+    command: redis-server --requirepass i3m_password
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - i3m-network
+
+  # TimescaleDB 2.11 - Time-series analytics
+  timescaledb:
+    image: timescale/timescaledb:2.11.0-pg15
+    container_name: i3m-timescaledb
+    environment:
+      POSTGRES_DB: i3m_analytics
+      POSTGRES_USER: i3m_user
+      POSTGRES_PASSWORD: i3m_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - i3m-network
+
+  # Elasticsearch 8.0 - Search and indexing
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: i3m-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - i3m-network
+
+  # ===================
+  # MESSAGE QUEUE
+  # ===================
+  
+  # Apache Kafka - Event streaming
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: i3m-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - i3m-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: i3m-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - i3m-network
+
+  # ===================
+  # CORE SERVICES
+  # ===================
+  
+  # API Gateway - Port 3004
+  api-gateway:
+    build:
+      context: ./core-services/api-gateway
+      dockerfile: Dockerfile
+    container_name: i3m-api-gateway
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - REDIS_URL=redis://:i3m_password@redis:6379
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - AUTH_SERVICE=http://auth-service:3008
+      - USER_SERVICE=http://user-service:3009
+    depends_on:
+      - redis
+    networks:
+      - i3m-network
+
+  # Auth Service - Port 3008
+  auth-service:
+    build:
+      context: ./core-services/auth-service
+      dockerfile: Dockerfile
+    container_name: i3m-auth-service
+    ports:
+      - "3008:3008"
+    environment:
+      - PORT=3008
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - REDIS_URL=redis://:i3m_password@redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  # User Service - Port 3009
+  user-service:
+    build:
+      context: ./core-services/user-service
+      dockerfile: Dockerfile
+    container_name: i3m-user-service
+    ports:
+      - "3009:3009"
+    environment:
+      - PORT=3009
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
+      - JWT_SECRET=your-super-secret-jwt-key-here
+    depends_on:
+      - postgres
+    networks:
+      - i3m-network
+
+  # ERP Services
+  finance-service:
+    build:
+      context: ./erp-services/finance-service
+      dockerfile: Dockerfile
+    container_name: i3m-finance-service
+    ports:
+      - "3028:3028"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SERVER_PORT=3028
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+      - STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  hrm-service:
+    build:
+      context: ./erp-services/hrm-service
+      dockerfile: Dockerfile
+    container_name: i3m-hrm-service
+    ports:
+      - "3029:3029"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - SERVER_PORT=3029
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  inventory-service:
+    build:
+      context: ./erp-services/inventory-service
+      dockerfile: Dockerfile
+    container_name: i3m-inventory-service
+    ports:
+      - "3030:3030"
+    environment:
+      - NODE_ENV=production
+      - PORT=3030
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=i3m_user
+      - DB_PASSWORD=i3m_password
+      - DB_NAME=i3m_inventory_db
+      - DB_SSL_MODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+      - REDIS_DB=4
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - FINANCE_SERVICE_URL=http://finance-service:3010
+      - HRM_SERVICE_URL=http://hrm-service:3011
+      - API_GATEWAY_URL=http://api-gateway:3004
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+      - finance-service
+      - hrm-service
+    networks:
+      - i3m-network
+
+  procurement-service:
+    build:
+      context: ./erp-services/procurement-service
+      dockerfile: Dockerfile
+    container_name: i3m-procurement-service
+    ports:
+      - "3031:3031"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_procurement_db?sslmode=disable
+      - DB_USER=i3m_user
+      - DB_PASSWORD=i3m_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+      - REDIS_DB=5
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - FINANCE_SERVICE_URL=http://finance-service:3010
+      - HRM_SERVICE_URL=http://hrm-service:3011
+      - INVENTORY_SERVICE_URL=http://inventory-service:3012
+      - API_GATEWAY_URL=http://api-gateway:3004
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+      - inventory-service
+    networks:
+      - i3m-network
+
+  # E-commerce Service (Node.js + Express, MongoDB)
+  ecommerce-service:
+    build:
+      context: ./erp-services/ecommerce-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-ecommerce-service
+    ports:
+      - "3014:3014"
+    environment:
+      - NODE_ENV=production
+      - PORT=3014
+      - MONGO_URI=mongodb://i3m_user:i3m_password@mongodb:27017/i3m_ecommerce_db?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+      - REDIS_DB=4
+      - JWT_SECRET=supersecretjwtkey
+      - JWT_EXPIRES_IN=1h
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+
+  # CRM Service (Python FastAPI, PostgreSQL)
+  crm-service:
+    build:
+      context: ./erp-services/crm-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-crm-service
+    ports:
+      - "3015:3015"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_crm_db
+      - REDIS_URL=redis://:i3m_password@redis:6379/5
+      - SECRET_KEY=supersecretcrmsecretkey
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+
+  # ===================
+  # MONITORING
+  # ===================
+  
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: i3m-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./shared/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - i3m-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: i3m-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./shared/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./shared/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - i3m-network
+
+  # AI Service (Python FastAPI, TensorFlow/PyTorch)
+  ai-service:
+    build:
+      context: ./analytics-services/ai-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-ai-service
+    ports:
+      - "3016:3016"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_ai_db
+      - REDIS_URL=redis://:i3m_password@redis:6379/6
+      - SECRET_KEY=supersecretaisecretkey
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - CRM_SERVICE_URL=http://crm-service:3015
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+
+  # ML Pipeline Service (Python FastAPI, MLflow)
+  ml-pipeline-service:
+    build:
+      context: ./analytics-services/ml-pipeline-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-ml-pipeline-service
+    ports:
+      - "3017:3017"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_ml_pipeline_db
+      - REDIS_URL=redis://:i3m_password@redis:6379/7
+      - SECRET_KEY=supersecretmlpipelinesecretkey
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - AI_SERVICE_URL=http://ai-service:3016
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - CELERY_BROKER_URL=redis://:i3m_password@redis:6379/8
+      - CELERY_RESULT_BACKEND=redis://:i3m_password@redis:6379/9
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+      - ai-service
+    networks:
+      - i3m-network
+
+  # Analytics Service (Python FastAPI, PostgreSQL)
+  analytics-service:
+    build:
+      context: ./analytics-services/analytics-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-analytics-service
+    ports:
+      - "3018:3018"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_analytics_db
+      - REDIS_URL=redis://:i3m_password@redis:6379/10
+      - SECRET_KEY=supersecretanalyticssecretkey
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - AI_SERVICE_URL=http://ai-service:3016
+      - ML_PIPELINE_SERVICE_URL=http://ml-pipeline-service:3017
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+
+  # User Analytics Service (Python FastAPI, PostgreSQL)
+  user-analytics-service:
+    build:
+      context: ./analytics-services/user-analytics-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-user-analytics-service
+    ports:
+      - "3019:3019"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_user_analytics_db
+      - REDIS_URL=redis://:i3m_password@redis:6379/11
+      - SECRET_KEY=supersecretuseranalyticssecretkey
+      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3018
+    depends_on:
+      - postgres
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+
+  # Content Service (Node.js Express, MongoDB)
+  content-service:
+    build:
+      context: ./content-services/content-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-content-service
+    ports:
+      - "3020:3020"
+    environment:
+      - NODE_ENV=production
+      - PORT=3020
+      - MONGODB_URI=mongodb://i3m_user:i3m_password@mongodb:27017/i3m_content_db?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=i3m_password
+      - REDIS_DB=12
+      - JWT_SECRET=supersecretcontentsecretkey
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+      - AUTH_SERVICE_URL=http://auth-service:3008
+      - USER_SERVICE_URL=http://user-service:3009
+      - MEDIA_SERVICE_URL=http://media-service:3021
+    depends_on:
+      - mongodb
+      - redis
+      - auth-service
+    networks:
+      - i3m-network
+    volumes:
+      - ./content-services/content-service/uploads:/app/uploads
+
+  # Media Service (Node.js Express, MongoDB)
+  media-service:
+    build:
+      context: ./content-services/media-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: i3m-media-service
+    ports:
+      - "3021:3021"
+    environment:
+      - NODE_ENV=production
+      - PORT=3021
+      - MONGODB_URI=mongodb://i3m_user:i3m_password@mongodb:27017/i3m_media_db?authSource=admin
+    depends_on:
+      - mongodb
+    networks:
+      - i3m-network
+    volumes:
+      - ./content-services/media-service/uploads:/app/uploads
+
+  # Metadata Service (Python FastAPI)
+  metadata-service:
+    build:
+      context: ./content-services/metadata-service
+      dockerfile: Dockerfile
+    container_name: i3m-metadata-service
+    ports:
+      - "3022:3022"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Security Service (Python FastAPI)
+  security-service:
+    build:
+      context: ./infrastructure-services/security-service
+      dockerfile: Dockerfile
+    container_name: i3m-security-service
+    ports:
+      - "3023:3023"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Observability Service (Python FastAPI)
+  observability-service:
+    build:
+      context: ./infrastructure-services/observability-service
+      dockerfile: Dockerfile
+    container_name: i3m-observability-service
+    ports:
+      - "3024:3024"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Cost Optimization Service (Python FastAPI)
+  cost-optimization-service:
+    build:
+      context: ./infrastructure-services/cost-optimization-service
+      dockerfile: Dockerfile
+    container_name: i3m-cost-optimization-service
+    ports:
+      - "3025:3025"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Load Balancer Service (Python FastAPI)
+  load-balancer-service:
+    build:
+      context: ./infrastructure-services/load-balancer-service
+      dockerfile: Dockerfile
+    container_name: i3m-load-balancer-service
+    ports:
+      - "3026:3026"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Secrets Management Service (Python FastAPI)
+  secrets-management-service:
+    build:
+      context: ./infrastructure-services/secrets-management-service
+      dockerfile: Dockerfile
+    container_name: i3m-secrets-management-service
+    ports:
+      - "3027:3027"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Template Marketplace Service (Python FastAPI)
+  template-marketplace-service:
+    build:
+      context: ./marketplace-services/template-marketplace-service
+      dockerfile: Dockerfile
+    container_name: i3m-template-marketplace-service
+    ports:
+      - "3028:3028"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Installation Service (Python FastAPI)
+  installation-service:
+    build:
+      context: ./marketplace-services/installation-service
+      dockerfile: Dockerfile
+    container_name: i3m-installation-service
+    ports:
+      - "3029:3029"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Preview Service (Python FastAPI)
+  preview-service:
+    build:
+      context: ./marketplace-services/preview-service
+      dockerfile: Dockerfile
+    container_name: i3m-preview-service
+    ports:
+      - "3030:3030"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Notification Service (Python FastAPI)
+  notification-service:
+    build:
+      context: ./shared-services/notification-service
+      dockerfile: Dockerfile
+    container_name: i3m-notification-service
+    ports:
+      - "3031:3031"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Workflow Service (Python FastAPI)
+  workflow-service:
+    build:
+      context: ./shared-services/workflow-service
+      dockerfile: Dockerfile
+    container_name: i3m-workflow-service
+    ports:
+      - "3032:3032"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Billing Service (Python FastAPI)
+  billing-service:
+    build:
+      context: ./shared-services/billing-service
+      dockerfile: Dockerfile
+    container_name: i3m-billing-service
+    ports:
+      - "3033:3033"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Healthcare Service (Python FastAPI, PostgreSQL)
+  healthcare-service:
+    build:
+      context: ./industry-services/healthcare-service
+      dockerfile: Dockerfile
+    container_name: i3m-healthcare-service
+    ports:
+      - "3034:3034"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql://i3m_user:i3m_password@postgres:5432/i3m_healthcare_db
+      - REDIS_URL=redis://:i3m_redis_password@redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  # Agriculture Service (Python FastAPI, PostgreSQL)
+  agriculture-service:
+    build:
+      context: ./industry-services/agriculture-service
+      dockerfile: Dockerfile
+    container_name: i3m-agriculture-service
+    ports:
+      - "3035:3035"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql://i3m_user:i3m_password@postgres:5432/i3m_agriculture_db
+      - REDIS_URL=redis://:i3m_redis_password@redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  # API Documentation Service (Python FastAPI)
+  api-documentation-service:
+    build:
+      context: ./integration-services/api-documentation-service
+      dockerfile: Dockerfile
+    container_name: i3m-api-documentation-service
+    ports:
+      - "3036:3036"
+    environment:
+      - DEBUG=false
+    networks:
+      - i3m-network
+
+  # Integration Service (Python FastAPI, PostgreSQL)
+  integration-service:
+    build:
+      context: ./integration-services/integration-service
+      dockerfile: Dockerfile
+    container_name: i3m-integration-service
+    ports:
+      - "3037:3037"
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=postgresql://i3m_user:i3m_password@postgres:5432/i3m_integration_db
+      - REDIS_URL=redis://:i3m_redis_password@redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - i3m-network
+
+  # Currency Exchange Service (Python FastAPI)
+  currency-exchange-service:
+    build:
+      context: ./integration-services/currency-exchange-service
+      dockerfile: Dockerfile
+    container_name: i3m-currency-exchange-service
+    ports:
+      - "3038:3038"
+    environment:
+      - DEBUG=false
+      - REDIS_URL=redis://:i3m_redis_password@redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - i3m-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  timescaledb_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  i3m-network:
+    driver: bridge

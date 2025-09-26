@@ -1,0 +1,84 @@
+server:
+  port: 3019
+
+spring:
+  application:
+    name: analytics-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: analytics
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_password
+      database: 18
+      timeout: 2000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.analytics: INFO
+
+# Analytics specific configuration
+analytics:
+  # Data collection configuration
+  collection:
+    batch-size: 1000
+    flush-interval-seconds: 30
+    retention-days: 365
+    compression-enabled: true
+  
+  # Dashboard configuration
+  dashboard:
+    max-widgets: 50
+    refresh-interval-seconds: 60
+    cache-duration-minutes: 15
+  
+  # KPI configuration
+  kpi:
+    calculation-interval-minutes: 5
+    alert-threshold-percent: 10.0
+    historical-data-days: 90
+  
+  # Reporting configuration
+  reporting:
+    max-concurrent-reports: 10
+    report-timeout-minutes: 30
+    export-formats: ["PDF", "Excel", "CSV"]
+    scheduled-reports-enabled: true
+  
+  # Real-time analytics
+  realtime:
+    websocket-enabled: true
+    update-frequency-seconds: 5
+    max-connections: 1000
+  
+  # Data processing
+  processing:
+    parallel-threads: 4
+    chunk-size: 10000
+    error-threshold-percent: 5.0
+    retry-attempts: 3

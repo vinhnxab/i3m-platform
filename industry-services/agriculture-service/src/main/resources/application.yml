@@ -1,0 +1,67 @@
+server:
+  port: 3035
+
+spring:
+  application:
+    name: agriculture-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: agriculture
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 5
+      timeout: 2000ms
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.agriculture: INFO
+
+# Agriculture specific configuration
+agriculture:
+  weather:
+    api-key: ${WEATHER_API_KEY:your_weather_api_key}
+    provider: "OpenWeatherMap"
+    update-interval-hours: 1
+  crop:
+    growth-monitoring: true
+    pest-detection: true
+    yield-prediction: true
+  irrigation:
+    auto-scheduling: true
+    water-conservation: true
+  sensors:
+    data-collection-interval-minutes: 15
+    alert-thresholds:
+      soil-moisture-min: 30
+      temperature-max: 35
+      humidity-min: 40
+  integration:
+    satellite-imagery: true
+    drone-data: true
+    iot-sensors: true

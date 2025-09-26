@@ -1,0 +1,74 @@
+server:
+  port: 3028
+
+spring:
+  application:
+    name: finance-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: finance
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.i3m.finance: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Stripe Configuration
+stripe:
+  api-key: ${STRIPE_SECRET_KEY:sk_test_your_stripe_secret_key}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_your_webhook_secret}
+
+# Application specific configuration
+finance:
+  default-currency: USD
+  supported-currencies: USD,EUR,GBP,JPY,CNY,VND
+  transaction:
+    batch-size: 100
+    retry-attempts: 3

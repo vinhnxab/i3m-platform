@@ -1,0 +1,112 @@
+server:
+  port: 3051
+
+spring:
+  application:
+    name: integration-service
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5433/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: integration
+  
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      password: i3m_redis_password
+      database: 7
+      timeout: 2000ms
+  
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: integration-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: i3m_user
+    password: i3m_password
+    virtual-host: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.integration: INFO
+    org.springframework.kafka: DEBUG
+
+# Integration specific configuration
+integration:
+  # Webhook configuration
+  webhooks:
+    max-retries: 3
+    retry-delay-seconds: 30
+    timeout-seconds: 30
+    max-payload-size: 10485760 # 10MB
+  
+  # Data sync configuration
+  sync:
+    batch-size: 1000
+    max-concurrent-syncs: 5
+    sync-interval-minutes: 15
+    cleanup-retention-days: 30
+  
+  # External API configuration
+  external-apis:
+    default-timeout-seconds: 30
+    max-connections-per-route: 20
+    max-connections-total: 100
+    connection-request-timeout-seconds: 10
+  
+  # Message queue configuration
+  messaging:
+    dead-letter-max-retries: 5
+    message-ttl-hours: 24
+    batch-processing-size: 100
+  
+  # ETL configuration
+  etl:
+    max-parallel-jobs: 3
+    chunk-size: 5000
+    error-threshold-percent: 5
+    cleanup-temp-files: true
+  
+  # API rate limiting
+  rate-limiting:
+    enabled: true
+    requests-per-minute: 1000
+    burst-capacity: 100
+  
+  # Monitoring
+  monitoring:
+    health-check-interval-seconds: 60
+    metrics-collection-enabled: true
+    alert-thresholds:
+      error-rate-percent: 5
+      response-time-ms: 5000

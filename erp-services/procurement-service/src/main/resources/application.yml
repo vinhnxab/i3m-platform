@@ -1,0 +1,171 @@
+server:
+  port: 3013
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: procurement-service
+    
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:production}
+    
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/i3m_procurement_db?sslmode=disable}
+    username: ${DB_USER:i3m_user}
+    password: ${DB_PASSWORD:i3m_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      pool-name: ProcurementHikariCP
+      
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: ${DDL_AUTO:update}
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+    show-sql: ${SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+        default_schema: procurement
+        
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:i3m_password}
+      database: ${REDIS_DB:5}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: UTC
+    
+  security:
+    user:
+      name: admin
+      password: admin
+      
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      service: procurement-service
+      environment: ${ENVIRONMENT:production}
+
+logging:
+  level:
+    com.i3m.procurementservice: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:WARN}
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_BIND_LOG_LEVEL:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:/app/logs/procurement-service.log}
+    max-size: 10MB
+    max-history: 30
+
+# Application specific configurations
+app:
+  name: I3M Platform Procurement Service
+  version: 1.0.0
+  description: Procurement Management System for I3M Platform
+  
+  jwt:
+    secret: ${JWT_SECRET:your-super-secret-jwt-key-here}
+    expiration: ${JWT_EXPIRATION:86400} # 24 hours in seconds
+    
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3004}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,PATCH,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:Content-Type,Authorization,X-Tenant-ID,X-User-ID}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+    
+  services:
+    auth-service:
+      url: ${AUTH_SERVICE_URL:http://auth-service:3008}
+      timeout: 5000
+    user-service:
+      url: ${USER_SERVICE_URL:http://user-service:3009}
+      timeout: 5000
+    finance-service:
+      url: ${FINANCE_SERVICE_URL:http://finance-service:3010}
+      timeout: 5000
+    hrm-service:
+      url: ${HRM_SERVICE_URL:http://hrm-service:3011}
+      timeout: 5000
+    inventory-service:
+      url: ${INVENTORY_SERVICE_URL:http://inventory-service:3012}
+      timeout: 5000
+    api-gateway:
+      url: ${API_GATEWAY_URL:http://api-gateway:3004}
+      timeout: 5000
+      
+  procurement:
+    default-currency: ${DEFAULT_CURRENCY:USD}
+    approval-workflow:
+      enabled: ${APPROVAL_WORKFLOW_ENABLED:true}
+      auto-approve-limit: ${AUTO_APPROVE_LIMIT:1000}
+    rfq:
+      validity-days: ${RFQ_VALIDITY_DAYS:30}
+      min-suppliers: ${RFQ_MIN_SUPPLIERS:3}
+      max-suppliers: ${RFQ_MAX_SUPPLIERS:10}
+    purchase-order:
+      number-prefix: ${PO_NUMBER_PREFIX:PO}
+      auto-numbering: ${PO_AUTO_NUMBERING:true}
+    supplier:
+      evaluation:
+        enabled: ${SUPPLIER_EVALUATION_ENABLED:true}
+        criteria: ${SUPPLIER_EVALUATION_CRITERIA:quality,delivery,price,service}
+    notifications:
+      enabled: ${NOTIFICATIONS_ENABLED:true}
+      email-enabled: ${EMAIL_NOTIFICATIONS_ENABLED:false}
+      
+  pagination:
+    default-size: ${DEFAULT_PAGE_SIZE:20}
+    max-size: ${MAX_PAGE_SIZE:100}
+    
+  cache:
+    ttl:
+      suppliers: ${CACHE_SUPPLIERS_TTL:3600} # 1 hour
+      categories: ${CACHE_CATEGORIES_TTL:7200} # 2 hours
+      purchase-orders: ${CACHE_PO_TTL:1800} # 30 minutes
+      
+  file-upload:
+    max-size: ${MAX_FILE_SIZE:10MB}
+    allowed-types: ${ALLOWED_FILE_TYPES:pdf,doc,docx,xls,xlsx,jpg,jpeg,png}
+    storage-path: ${FILE_STORAGE_PATH:/app/uploads}

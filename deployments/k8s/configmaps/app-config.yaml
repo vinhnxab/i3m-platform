@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: i3m-platform
+data:
+  # Database Configuration
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "i3m_platform"
+  MONGODB_HOST: "mongodb-service"
+  MONGODB_PORT: "27017"
+  MONGODB_DB: "i3m_platform"
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  TIMESCALEDB_HOST: "timescaledb-service"
+  TIMESCALEDB_PORT: "5432"
+  ELASTICSEARCH_HOST: "elasticsearch-service"
+  ELASTICSEARCH_PORT: "9200"
+  
+  # Kafka Configuration
+  KAFKA_BROKERS: "kafka-service:9092"
+  KAFKA_ZOOKEEPER: "zookeeper-service:2181"
+  
+  # Service URLs
+  API_GATEWAY_URL: "http://api-gateway-service:3004"
+  AUTH_SERVICE_URL: "http://auth-service:3008"
+  USER_SERVICE_URL: "http://user-service:3009"
+  
+  # Application Configuration
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  
+  # CORS Configuration
+  CORS_ALLOWED_ORIGINS: "https://app.i3m.com,https://admin.i3m.com"
+  
+  # Rate Limiting
+  RATE_LIMIT_REQUESTS_PER_MINUTE: "100"
+  
+  # Cache Configuration
+  CACHE_TTL: "600"
+  
+  # Monitoring
+  PROMETHEUS_ENABLED: "true"
+  METRICS_ENABLED: "true"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: i3m-platform
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - i3m-platform
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: i3m-platform
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-service:9090
+        access: proxy
+        isDefault: true
+      - name: PostgreSQL
+        type: postgres
+        url: postgres-service:5432
+        database: i3m_platform
+        user: i3m_user
+        secureJsonData:
+          password: i3m_password
+      - name: Elasticsearch
+        type: elasticsearch
+        url: http://elasticsearch-service:9200
+        access: proxy
+        database: "[logstash-]YYYY.MM.DD"

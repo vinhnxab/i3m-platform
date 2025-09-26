@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: i3m-platform
+  labels:
+    name: i3m-platform
+    environment: production
+    version: "1.0.0"
+  annotations:
+    description: "I3M Platform - Microservices Architecture"
+    contact: "devops@i3m.com"

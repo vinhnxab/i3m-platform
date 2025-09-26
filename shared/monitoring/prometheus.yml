@@ -1,0 +1,262 @@
+# Prometheus configuration for I3M Platform
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Gateway metrics
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Auth Service metrics
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:3008']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # User Service metrics
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['user-service:3009']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  # Database monitoring
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # Docker container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+
+  # ERP Services
+  - job_name: 'finance-service'
+    static_configs:
+      - targets: ['finance-service:3028']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'hrm-service'
+    static_configs:
+      - targets: ['hrm-service:3029']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:3030']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'procurement-service'
+    static_configs:
+      - targets: ['procurement-service:3031']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'ecommerce-service'
+    static_configs:
+      - targets: ['ecommerce-service:3032']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'crm-service'
+    static_configs:
+      - targets: ['crm-service:3033']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  # Analytics Services
+  - job_name: 'ai-service'
+    static_configs:
+      - targets: ['ai-service:3017']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'ml-pipeline'
+    static_configs:
+      - targets: ['ml-pipeline:3018']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'analytics-service'
+    static_configs:
+      - targets: ['analytics-service:3019']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'user-analytics'
+    static_configs:
+      - targets: ['user-analytics:3020']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Content Services
+  - job_name: 'content-service'
+    static_configs:
+      - targets: ['content-service:3021']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'media-service'
+    static_configs:
+      - targets: ['media-service:3022']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'metadata-service'
+    static_configs:
+      - targets: ['metadata-service:3023']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Industry Services
+  - job_name: 'healthcare-service'
+    static_configs:
+      - targets: ['healthcare-service:3034']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'agriculture-service'
+    static_configs:
+      - targets: ['agriculture-service:3035']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  # Infrastructure Services
+  - job_name: 'security-service'
+    static_configs:
+      - targets: ['security-service:3040']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'observability-service'
+    static_configs:
+      - targets: ['observability-service:3041']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'cost-optimization'
+    static_configs:
+      - targets: ['cost-optimization:3042']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'load-balancer'
+    static_configs:
+      - targets: ['load-balancer:3043']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'secrets-management'
+    static_configs:
+      - targets: ['secrets-management:3044']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Integration Services
+  - job_name: 'api-documentation'
+    static_configs:
+      - targets: ['api-documentation:3050']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'integration-service'
+    static_configs:
+      - targets: ['integration-service:3051']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'currency-exchange'
+    static_configs:
+      - targets: ['currency-exchange:3052']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Marketplace Services
+  - job_name: 'template-marketplace'
+    static_configs:
+      - targets: ['template-marketplace:3060']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'template-installation'
+    static_configs:
+      - targets: ['template-installation:3061']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'template-preview'
+    static_configs:
+      - targets: ['template-preview:3062']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Shared Services
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service:3070']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'workflow-service'
+    static_configs:
+      - targets: ['workflow-service:3071']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  - job_name: 'billing-service'
+    static_configs:
+      - targets: ['billing-service:3072']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 15s
+
+  # Kafka monitoring
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-exporter:9308']
+    scrape_interval: 30s
+
+  # Elasticsearch monitoring
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch-exporter:9114']
+    scrape_interval: 30s
