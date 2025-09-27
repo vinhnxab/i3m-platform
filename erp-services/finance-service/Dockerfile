@@ -1,5 +1,5 @@
 # Multi-stage build for Java Spring Boot
-FROM openjdk:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN apk add --no-cache maven
 RUN mvn clean package -DskipTests
 
 # Production stage
-FROM openjdk:17-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
