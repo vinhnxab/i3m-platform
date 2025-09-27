@@ -123,6 +123,7 @@ func (as *AuthService) setupRouter() {
 
 	// Middlewares
 	as.router.Use(gin.Recovery())
+	as.router.Use(as.corsMiddleware())
 	as.router.Use(as.loggingMiddleware())
 	as.router.Use(as.metricsMiddleware())
 	as.router.Use(as.tenantMiddleware())

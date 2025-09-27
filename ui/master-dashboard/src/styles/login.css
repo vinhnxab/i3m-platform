@@ -1,0 +1,435 @@
+/* ========================================
+   LOGIN PAGE SPECIFIC STYLES
+   ======================================== */
+
+/* Tab Animation - Enhanced version below */
+
+.tab-slider {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  height: calc(100% - 0.5rem);
+  width: calc(50% - 0.25rem);
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border-radius: 0.375rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  will-change: transform;
+}
+
+.tab-slider.signup {
+  transform: translateX(100%);
+}
+
+/* Android-style tab trigger animations */
+.tab-trigger {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: var(--font-size);
+  font-weight: var(--font-weight-medium);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transform: translateY(0) scale(1);
+  overflow: hidden;
+}
+
+.tab-trigger::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+.tab-trigger:hover {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px) scale(1.02);
+}
+
+.tab-trigger:hover::before {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.375rem;
+}
+
+.tab-trigger:active {
+  transform: translateY(0) scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+.tab-trigger.active {
+  color: white;
+  transform: translateY(-1px) scale(1.02);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Android-style tab container */
+.tabs-container {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.tabs-container:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Android-style content transitions */
+.tab-content {
+  animation: androidSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes androidSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Remove old animations and replace with Android-style */
+.tab-slider.switching {
+  animation: androidBounce 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes androidBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Android Material Design elevation */
+.tab-slider {
+  box-shadow: 
+    0 2px 4px rgba(59, 130, 246, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.tab-slider.signup {
+  box-shadow: 
+    0 2px 4px rgba(6, 182, 212, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(6, 182, 212, 0.1);
+}
+
+/* Android-style ripple effect - already defined above */
+
+.tab-trigger::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+  pointer-events: none;
+}
+
+.tab-trigger:active::after {
+  width: 200px;
+  height: 200px;
+}
+
+/* Android-style focus states */
+.tab-trigger:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Submit button with tab-slider style */
+.submit-button {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border: none;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover {
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.submit-button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Glass Effect for Form */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Glass Effect for Language Switcher Button */
+.glass-effect-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-effect-button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Glass Effect for Language Switcher Dropdown */
+.glass-effect-dropdown {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-effect-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Selected language option with glass effect */
+.glass-effect-dropdown button[class*="bg-gradient-to-r"] {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(6, 182, 212, 0.3) 100%) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(59, 130, 246, 0.5) !important;
+  box-shadow: 
+    0 2px 8px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.glass-effect-dropdown button[class*="bg-gradient-to-r"]:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(6, 182, 212, 0.4) 100%) !important;
+  border: 1px solid rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 
+    0 4px 12px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Override theme components for login page */
+.auth-layout .bg-muted\/50 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.auth-layout .hover\:bg-muted:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.auth-layout .bg-background\/95 {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+.auth-layout .border-border\/50 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.auth-layout .text-muted-foreground {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.auth-layout .text-foreground {
+  color: white !important;
+}
+
+.auth-layout .bg-card\/95 {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+/* Hide scrollbar for language switcher dropdown */
+.auth-layout .overflow-y-auto::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.auth-layout .overflow-y-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Ensure buttons are clickable */
+.auth-layout button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.auth-layout [role="button"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix z-index for popover content */
+.auth-layout [data-radix-popper-content-wrapper] {
+  z-index: 10000 !important;
+}
+
+.auth-layout [data-radix-dropdown-content] {
+  z-index: 10000 !important;
+}
+
+/* ========================================
+          TYPOGRAPHY - SYSTEM VARIABLES
+          ======================================== */
+
+/* Use system font variables for consistency */
+.auth-layout {
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif);
+  font-size: var(--font-size, 16px);
+}
+
+.auth-layout .text-base {
+  font-size: var(--font-size, 16px) !important;
+  line-height: 1.5;
+}
+
+.auth-layout .text-xl {
+  font-size: var(--text-xl, 1.25rem) !important;
+  line-height: 1.5;
+}
+
+.auth-layout .text-3xl {
+  font-size: var(--text-3xl, 1.875rem) !important;
+  line-height: 1.5;
+}
+
+.auth-layout .font-medium {
+  font-weight: var(--font-weight-medium, 500) !important;
+}
+
+.auth-layout .font-bold {
+  font-weight: var(--font-weight-bold, 700) !important;
+}
+
+/* Disabled states */
+.disabled\:opacity-50:disabled { opacity: 0.5; }
+.disabled\:cursor-not-allowed:disabled { cursor: not-allowed; }
+.disabled\:hover\:from-blue-500:hover:disabled { --tw-gradient-from: #3b82f6; }
+.disabled\:hover\:to-cyan-500:hover:disabled { --tw-gradient-to: #06b6d4; }
+
+/* Custom placeholder styles */
+.placeholder-light::placeholder {
+  color: #ffffffe6 !important;
+  opacity: 1 !important;
+}
+
+.placeholder-light::-webkit-input-placeholder {
+  color: #ffffffe6 !important;
+  opacity: 1 !important;
+}
+
+.placeholder-light::-moz-placeholder {
+  color: #ffffffe6 !important;
+  opacity: 1 !important;
+}
+
+.placeholder-light:-ms-input-placeholder {
+  color: #ffffffe6 !important;
+  opacity: 1 !important;
+}
+
+.placeholder-light:-moz-placeholder {
+  color: #ffffffe6 !important;
+  opacity: 1 !important;
+}
+
+/* Data attributes (Radix UI) */
+.data-\[state\=active\]\:bg-blue-500[data-state="active"] { background-color: rgb(59 130 246); }
+.data-\[state\=active\]\:text-white[data-state="active"] { color: rgb(255 255 255); }
+
+/* Checkbox */
+.data-\[state\=checked\]\:bg-blue-500[data-state="checked"] { background-color: rgb(59 130 246); }
+.data-\[state\=checked\]\:border-blue-500[data-state="checked"] { border-color: rgb(59 130 246); }
+
+/* Disabled state */
+.disabled\:pointer-events-none:disabled { pointer-events: none; }
+.disabled\:opacity-50:disabled { opacity: 0.5; }
+
+/* Custom cursor styling */
+button {
+  cursor: pointer !important;
+}
+
+button:focus {
+  cursor: pointer !important;
+}
+
+button:hover {
+  cursor: pointer !important;
+}
+
+a {
+  cursor: pointer !important;
+}

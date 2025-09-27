@@ -1,0 +1,28 @@
+// Pages barrel export
+export { default as Login } from './Login';
+export { default as Register } from './Register';
+export { default as ForgotPassword } from './ForgotPassword';
+export { default as Dashboard } from './Dashboard';
+export { default as NotFound } from './NotFound';
+export { default as Maintenance } from './Maintenance';
+export { default as Unauthorized } from './Unauthorized';
+export { Overview } from './Overview';
+export { SupportManagement } from './SupportManagement';
+export { TemplateMarketplace } from './TemplateMarketplace';
+export { ServiceMarketplace } from './ServiceMarketplace';
+export { CustomerManagement } from './CustomerManagement';
+export { ScrumManagement } from './ScrumManagement';
+export { AIMLDashboard } from './AIMLDashboard';
+export { WorkflowManagement } from './WorkflowManagement';
+export { SecurityCenter } from './SecurityCenter';
+export { PerformanceMonitoring } from './PerformanceMonitoring';
+export { TenantManagement } from './TenantManagement';
+export { TeamManagement } from './TeamManagement';
+export { BackupManagement } from './BackupManagement';
+export { APIManagement } from './APIManagement';
+export { SettingsPanel } from './SettingsPanel';
+export { Analytics } from './Analytics';
+export { CMSManagement } from './CMSManagement';
+export { ERPManagement } from './ERPManagement';
+export { EcommerceManagement } from './EcommerceManagement';
+export { LiveChat } from './LiveChat';

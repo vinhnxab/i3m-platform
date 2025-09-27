@@ -30,6 +30,9 @@ func (as *AuthService) login(c *gin.Context) {
 	if tenantID == "" {
 		tenantID = c.GetString("tenant_id")
 	}
+	if tenantID == "" {
+		tenantID = "00000000-0000-0000-0000-000000000000" // Default tenant
+	}
 
 	// Record auth attempt
 	as.metrics.authAttempts.WithLabelValues(tenantID, "attempt", "password").Inc()
@@ -118,6 +121,9 @@ func (as *AuthService) register(c *gin.Context) {
 	tenantID := req.TenantID
 	if tenantID == "" {
 		tenantID = c.GetString("tenant_id")
+	}
+	if tenantID == "" {
+		tenantID = "00000000-0000-0000-0000-000000000000" // Default tenant
 	}
 
 	// Check if user already exists

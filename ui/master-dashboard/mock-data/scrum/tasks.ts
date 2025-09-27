@@ -1,0 +1,265 @@
+// Mock Tasks Data for Scrum Management
+export interface MockTask {
+  id: string;
+  title: string;
+  description: string;
+  assignee: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  storyPoints: number;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  labels: string[];
+  type: 'task' | 'story' | 'bug';
+  status: 'backlog' | 'todo' | 'in-progress' | 'review' | 'testing' | 'done' | 'deployed';
+  createdAt: string;
+  dueDate?: string;
+}
+
+export const mockTasks: MockTask[] = [
+  // Backlog
+  {
+    id: "1",
+    title: "Setup automated testing pipeline",
+    description: "Thiết lập CI/CD pipeline và viết unit tests cho các modules chính của hệ thống",
+    assignee: { id: "4", name: "Phạm Thị D", avatar: "" },
+    storyPoints: 13,
+    priority: "low",
+    labels: ["DevOps", "Testing"],
+    type: "task",
+    status: "backlog",
+    createdAt: "2024-01-18",
+  },
+  {
+    id: "2",
+    title: "API Rate Limiting Implementation",
+    description: "Implement rate limiting cho các API endpoints để tránh DDoS và abuse",
+    assignee: { id: "3", name: "Lê Văn C", avatar: "" },
+    storyPoints: 8,
+    priority: "medium",
+    labels: ["Backend", "Security"],
+    type: "story",
+    status: "backlog",
+    createdAt: "2024-01-19",
+  },
+  {
+    id: "3",
+    title: "Mobile App Push Notifications",
+    description: "Tích hợp Firebase push notifications cho mobile application",
+    assignee: { id: "6", name: "Nguyễn Thị F", avatar: "" },
+    storyPoints: 5,
+    priority: "low",
+    labels: ["Mobile", "Feature"],
+    type: "story",
+    status: "backlog",
+    createdAt: "2024-01-20",
+  },
+
+  // Todo
+  {
+    id: "4",
+    title: "Fix bug login authentication",
+    description: "Khắc phục lỗi không thể đăng nhập với một số tài khoản đặc biệt có ký tự đặc biệt",
+    assignee: { id: "2", name: "Trần Thị B", avatar: "" },
+    storyPoints: 3,
+    priority: "critical",
+    labels: ["Bug", "Backend"],
+    type: "bug",
+    status: "todo",
+    createdAt: "2024-01-17",
+    dueDate: "2024-01-20",
+  },
+  {
+    id: "5",
+    title: "Database Migration Optimization",
+    description: "Tối ưu hóa quá trình migration database để giảm downtime",
+    assignee: { id: "7", name: "Võ Văn G", avatar: "" },
+    storyPoints: 8,
+    priority: "high",
+    labels: ["Database", "Performance"],
+    type: "task",
+    status: "todo",
+    createdAt: "2024-01-18",
+    dueDate: "2024-01-25",
+  },
+  {
+    id: "6",
+    title: "Email Template Redesign",
+    description: "Thiết kế lại email templates cho notifications và marketing campaigns",
+    assignee: { id: "1", name: "Nguyễn Văn A", avatar: "" },
+    storyPoints: 5,
+    priority: "medium",
+    labels: ["UI/UX", "Email"],
+    type: "story",
+    status: "todo",
+    createdAt: "2024-01-19",
+    dueDate: "2024-01-26",
+  },
+
+  // In Progress
+  {
+    id: "7",
+    title: "Thiết kế UI cho user profile page",
+    description: "Tạo mockup và implement giao diện user profile với các tính năng edit thông tin cá nhân",
+    assignee: { id: "1", name: "Nguyễn Văn A", avatar: "" },
+    storyPoints: 5,
+    priority: "high",
+    labels: ["UI/UX", "Frontend"],
+    type: "story",
+    status: "in-progress",
+    createdAt: "2024-01-16",
+    dueDate: "2024-01-25",
+  },
+  {
+    id: "8",
+    title: "Payment Gateway Integration",
+    description: "Tích hợp VNPay và MoMo payment gateway cho e-commerce module",
+    assignee: { id: "3", name: "Lê Văn C", avatar: "" },
+    storyPoints: 13,
+    priority: "critical",
+    labels: ["Payment", "Backend"],
+    type: "story",
+    status: "in-progress",
+    createdAt: "2024-01-15",
+    dueDate: "2024-01-28",
+  },
+  {
+    id: "9",
+    title: "Search Performance Optimization",
+    description: "Cải thiện hiệu suất search engine với Elasticsearch implementation",
+    assignee: { id: "7", name: "Võ Văn G", avatar: "" },
+    storyPoints: 8,
+    priority: "medium",
+    labels: ["Search", "Performance"],
+    type: "task",
+    status: "in-progress",
+    createdAt: "2024-01-17",
+    dueDate: "2024-01-30",
+  },
+
+  // Review
+  {
+    id: "10",
+    title: "Implement real-time notifications",
+    description: "Tích hợp WebSocket để hiển thị thông báo real-time cho người dùng trong toàn hệ thống",
+    assignee: { id: "3", name: "Lê Văn C", avatar: "" },
+    storyPoints: 8,
+    priority: "medium",
+    labels: ["Feature", "Backend", "WebSocket"],
+    type: "story",
+    status: "review",
+    createdAt: "2024-01-15",
+    dueDate: "2024-01-28",
+  },
+  {
+    id: "11",
+    title: "Multi-language Support",
+    description: "Implement internationalization (i18n) cho frontend với support 10+ ngôn ngữ",
+    assignee: { id: "1", name: "Nguyễn Văn A", avatar: "" },
+    storyPoints: 13,
+    priority: "high",
+    labels: ["Frontend", "i18n"],
+    type: "story",
+    status: "review",
+    createdAt: "2024-01-14",
+    dueDate: "2024-01-27",
+  },
+
+  // Testing
+  {
+    id: "12",
+    title: "QA Testing User Stories",
+    description: "Thực hiện testing toàn diện cho các user stories đã hoàn thành trong sprint hiện tại",
+    assignee: { id: "5", name: "Hoàng Văn E", avatar: "" },
+    storyPoints: 3,
+    priority: "high",
+    labels: ["QA", "Testing"],
+    type: "task",
+    status: "testing",
+    createdAt: "2024-01-20",
+    dueDate: "2024-01-26",
+  },
+  {
+    id: "13",
+    title: "Security Audit Implementation",
+    description: "Thực hiện security audit và penetration testing cho toàn hệ thống",
+    assignee: { id: "8", name: "Đặng Thị H", avatar: "" },
+    storyPoints: 8,
+    priority: "critical",
+    labels: ["Security", "Audit"],
+    type: "task",
+    status: "testing",
+    createdAt: "2024-01-18",
+    dueDate: "2024-01-29",
+  },
+
+  // Done
+  {
+    id: "14",
+    title: "Dashboard analytics improvement",
+    description: "Cải thiện hiệu suất và thêm các chart mới cho dashboard analytics với real-time data",
+    assignee: { id: "1", name: "Nguyễn Văn A", avatar: "" },
+    storyPoints: 5,
+    priority: "medium",
+    labels: ["Analytics", "Frontend"],
+    type: "story",
+    status: "done",
+    createdAt: "2024-01-14",
+    dueDate: "2024-01-22",
+  },
+  {
+    id: "15",
+    title: "User Authentication Refactor",
+    description: "Refactor user authentication system với JWT và refresh token implementation",
+    assignee: { id: "2", name: "Trần Thị B", avatar: "" },
+    storyPoints: 8,
+    priority: "high",
+    labels: ["Auth", "Backend"],
+    type: "story",
+    status: "done",
+    createdAt: "2024-01-13",
+    dueDate: "2024-01-21",
+  },
+  {
+    id: "16",
+    title: "Cache Layer Implementation",
+    description: "Implement Redis cache layer để cải thiện performance cho database queries",
+    assignee: { id: "7", name: "Võ Văn G", avatar: "" },
+    storyPoints: 5,
+    priority: "medium",
+    labels: ["Performance", "Cache"],
+    type: "task",
+    status: "done",
+    createdAt: "2024-01-12",
+    dueDate: "2024-01-19",
+  },
+
+  // Deployed
+  {
+    id: "17",
+    title: "Deploy to Production",
+    description: "Deploy các features đã được testing và approved lên production environment",
+    assignee: { id: "4", name: "Phạm Thị D", avatar: "" },
+    storyPoints: 2,
+    priority: "medium",
+    labels: ["DevOps", "Deployment"],
+    type: "task",
+    status: "deployed",
+    createdAt: "2024-01-12",
+    dueDate: "2024-01-15",
+  },
+  {
+    id: "18",
+    title: "Server Monitoring Setup",
+    description: "Setup monitoring và alerting system với Grafana và Prometheus",
+    assignee: { id: "4", name: "Phạm Thị D", avatar: "" },
+    storyPoints: 8,
+    priority: "high",
+    labels: ["DevOps", "Monitoring"],
+    type: "task",
+    status: "deployed",
+    createdAt: "2024-01-10",
+    dueDate: "2024-01-17",
+  },
+];

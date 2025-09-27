@@ -1,0 +1,308 @@
+import { useSelector } from 'react-redux';
+
+interface RootState {
+  auth: {
+    user: {
+      role: string;
+      userRoles?: string[];
+      tenantId?: string;
+    } | null;
+  };
+}
+
+// Permission levels
+export const PERMISSION_LEVELS = {
+  FULL: 'full',
+  LIMITED: 'limited',
+  NONE: 'none'
+} as const;
+
+// Feature permissions mapping
+export const FEATURE_PERMISSIONS = {
+  // CORE DASHBOARD
+  overview: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+  analytics: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+
+  // BUSINESS MANAGEMENT
+  customers: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  ecommerce: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+  erp: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  cms: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+
+  // COMMUNICATION & SUPPORT
+  livechat: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.FULL
+  },
+  support: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.FULL
+  },
+
+  // MARKETPLACE & INTEGRATION
+  templates: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+  services: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+
+  // PROJECT & WORKFLOW
+  scrum: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  workflow: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+
+  // ADVANCED FEATURES
+  aiml: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  security: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  performance: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+
+  // SYSTEM & INFRASTRUCTURE
+  tenants: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.NONE,
+    TENANT_USER: PERMISSION_LEVELS.NONE,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.NONE,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  teams: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.NONE,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  backup: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.NONE,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  api: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  },
+  settings: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.FULL,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.FULL,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.FULL,
+    END_CUSTOMER: PERMISSION_LEVELS.LIMITED
+  },
+  users: {
+    PLATFORM_ADMIN: PERMISSION_LEVELS.FULL,
+    PLATFORM_USER: PERMISSION_LEVELS.LIMITED,
+    TENANT_ADMIN: PERMISSION_LEVELS.FULL,
+    TENANT_USER: PERMISSION_LEVELS.LIMITED,
+    MARKETPLACE_DEVELOPER: PERMISSION_LEVELS.NONE,
+    END_CUSTOMER: PERMISSION_LEVELS.NONE
+  }
+} as const;
+
+// Hook to check if user has access to a feature
+export const usePermissions = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+
+  const hasPermission = (feature: keyof typeof FEATURE_PERMISSIONS): boolean => {
+    if (!isAuthenticated || !user) return false;
+    
+    const permission = FEATURE_PERMISSIONS[feature][user.role as keyof typeof FEATURE_PERMISSIONS[typeof feature]];
+    return permission !== PERMISSION_LEVELS.NONE;
+  };
+
+  const getPermissionLevel = (feature: keyof typeof FEATURE_PERMISSIONS): string => {
+    if (!isAuthenticated || !user) return PERMISSION_LEVELS.NONE;
+    
+    return FEATURE_PERMISSIONS[feature][user.role as keyof typeof FEATURE_PERMISSIONS[typeof feature]];
+  };
+
+  const canAccess = (feature: keyof typeof FEATURE_PERMISSIONS): boolean => {
+    return hasPermission(feature);
+  };
+
+  const canAccessFull = (feature: keyof typeof FEATURE_PERMISSIONS): boolean => {
+    return getPermissionLevel(feature) === PERMISSION_LEVELS.FULL;
+  };
+
+  const canAccessLimited = (feature: keyof typeof FEATURE_PERMISSIONS): boolean => {
+    const level = getPermissionLevel(feature);
+    return level === PERMISSION_LEVELS.FULL || level === PERMISSION_LEVELS.LIMITED;
+  };
+
+  return {
+    hasPermission,
+    getPermissionLevel,
+    canAccess,
+    canAccessFull,
+    canAccessLimited,
+    user,
+    isAuthenticated
+  };
+};
+
+// Hook to check if user has specific role
+export const useRole = () => {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+
+  const hasRole = (role: string): boolean => {
+    if (!isAuthenticated || !user) return false;
+    return user.role === role;
+  };
+
+  const hasAnyRole = (roles: string[]): boolean => {
+    if (!isAuthenticated || !user) return false;
+    return roles.includes(user.role);
+  };
+
+  const isPlatformAdmin = (): boolean => {
+    return hasRole('PLATFORM_ADMIN');
+  };
+
+  const isPlatformUser = (): boolean => {
+    return hasRole('PLATFORM_USER');
+  };
+
+  const isTenantAdmin = (): boolean => {
+    return hasRole('TENANT_ADMIN');
+  };
+
+  const isTenantUser = (): boolean => {
+    return hasRole('TENANT_USER');
+  };
+
+  const isDeveloper = (): boolean => {
+    return hasRole('MARKETPLACE_DEVELOPER');
+  };
+
+  const isEndCustomer = (): boolean => {
+    return hasRole('END_CUSTOMER');
+  };
+
+  const isPlatformRole = (): boolean => {
+    return hasAnyRole(['PLATFORM_ADMIN', 'PLATFORM_USER']);
+  };
+
+  const isTenantRole = (): boolean => {
+    return hasAnyRole(['TENANT_ADMIN', 'TENANT_USER']);
+  };
+
+  return {
+    hasRole,
+    hasAnyRole,
+    isPlatformAdmin,
+    isPlatformUser,
+    isTenantAdmin,
+    isTenantUser,
+    isDeveloper,
+    isEndCustomer,
+    isPlatformRole,
+    isTenantRole,
+    user,
+    isAuthenticated
+  };
+};

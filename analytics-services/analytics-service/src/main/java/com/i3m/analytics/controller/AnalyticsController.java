@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -159,10 +160,10 @@ public class AnalyticsController {
     }
 
     @GetMapping("/realtime/events")
-    public ResponseEntity<Map<String, Object>> getRealtimeEvents(
+    public ResponseEntity<List<AnalyticsEventDto>> getRealtimeEvents(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
             @RequestParam(defaultValue = "100") int limit) {
-        Map<String, Object> events = analyticsService.getRealtimeEvents(tenantId, limit);
+        List<AnalyticsEventDto> events = analyticsService.getRealtimeEvents(tenantId, limit);
         return ResponseEntity.ok(events);
     }
 

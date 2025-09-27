@@ -118,6 +118,8 @@ services:
     build:
       context: ./core-services/api-gateway
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: i3m-api-gateway
     ports:
       - "3004:3004"
@@ -137,12 +139,14 @@ services:
     build:
       context: ./core-services/auth-service
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: i3m-auth-service
     ports:
       - "3008:3008"
     environment:
       - PORT=3008
-      - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
+      - DATABASE_URL=postgres://i3m_user:i3m_password@postgres:5432/i3m_platform?sslmode=disable
       - JWT_SECRET=your-super-secret-jwt-key-here
       - REDIS_URL=redis://:i3m_password@redis:6379
     depends_on:

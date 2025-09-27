@@ -1,0 +1,145 @@
+/* Kanban Board Styles */
+.kanban-scroll-container {
+  /* Hide scrollbar completely */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.kanban-scroll-container::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+}
+
+/* Smooth scrolling */
+.kanban-scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars globally for all scroll containers */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit browsers (Chrome, Safari, Edge) */
+}
+
+/* Touch scrolling on mobile */
+.kanban-scroll-container {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scroll hints like Trello */
+.kanban-board-container {
+  position: relative;
+}
+
+.kanban-board-container::before,
+.kanban-board-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.3s ease;
+}
+
+.kanban-board-container::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.1), transparent);
+  opacity: 0;
+}
+
+.kanban-board-container::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(0,0,0,0.1), transparent);
+  opacity: 0;
+}
+
+.kanban-board-container.scroll-left::before {
+  opacity: 1;
+}
+
+.kanban-board-container.scroll-right::after {
+  opacity: 1;
+}
+
+/* Show scroll hints when content overflows */
+.kanban-board-container:not(.scroll-left):not(.scroll-right)::before,
+.kanban-board-container:not(.scroll-left):not(.scroll-right)::after {
+  opacity: 0.3;
+}
+
+/* Column spacing and sizing */
+.kanban-column {
+  width: 100%;
+  min-height: 400px;
+}
+
+.kanban-column.compact {
+  min-height: 350px;
+}
+
+/* Drag and drop visual feedback */
+.kanban-column.drag-over {
+  background-color: hsl(var(--primary) / 0.05);
+  border-color: hsl(var(--primary) / 0.3);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* Task card hover effects */
+.kanban-task-card {
+  transition: all 0.2s ease;
+}
+
+.kanban-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
+}
+
+/* Loading state */
+.kanban-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Fullscreen mode */
+.kanban-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: hsl(var(--background));
+  padding: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .kanban-board-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .kanban-board-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 640px) {
+  .kanban-board-header h3 {
+    font-size: 1.125rem;
+  }
+  
+  .kanban-board-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+}
