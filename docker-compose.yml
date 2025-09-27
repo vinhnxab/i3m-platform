@@ -56,7 +56,7 @@ services:
       POSTGRES_USER: i3m_user
       POSTGRES_PASSWORD: i3m_password
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     networks:
@@ -544,7 +544,7 @@ services:
       dockerfile: Dockerfile
     container_name: i3m-security-service
     ports:
-      - "3023:3023"
+      - "3040:3040"
     environment:
       - DEBUG=false
     networks:
@@ -557,7 +557,7 @@ services:
       dockerfile: Dockerfile
     container_name: i3m-observability-service
     ports:
-      - "3024:3024"
+      - "3041:3041"
     environment:
       - DEBUG=false
     networks:
@@ -570,7 +570,7 @@ services:
       dockerfile: Dockerfile
     container_name: i3m-cost-optimization-service
     ports:
-      - "3025:3025"
+      - "3042:3042"
     environment:
       - DEBUG=false
     networks:
@@ -583,7 +583,7 @@ services:
       dockerfile: Dockerfile
     container_name: i3m-load-balancer-service
     ports:
-      - "3026:3026"
+      - "3043:3043"
     environment:
       - DEBUG=false
     networks:
@@ -596,7 +596,7 @@ services:
       dockerfile: Dockerfile
     container_name: i3m-secrets-management-service
     ports:
-      - "3027:3027"
+      - "3044:3044"
     environment:
       - DEBUG=false
     networks:

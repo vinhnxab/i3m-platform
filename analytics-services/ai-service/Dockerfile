@@ -35,11 +35,11 @@ RUN mkdir -p logs models uploads \
 USER ai
 
 # Expose port
-EXPOSE 3016
+EXPOSE 3017
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3016/health || exit 1
+    CMD curl -f http://localhost:3017/health || exit 1
 
 # Run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3016"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3017"]
