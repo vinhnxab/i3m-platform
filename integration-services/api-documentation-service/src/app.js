@@ -215,7 +215,7 @@ async function startServer() {
     await connectDB();
     logger.info('Connected to MongoDB');
 
-    // Connect to Redis (optional) - DISABLED
+    // Connect to Redis (optional) - TEMPORARILY DISABLED
     // await connectRedis();
     // logger.info('Connected to Redis');
 

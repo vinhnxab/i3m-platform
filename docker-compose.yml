@@ -164,7 +164,7 @@ services:
       - PORT=3008
       - DATABASE_URL=postgres://i3m_user:i3m_password@postgres:5432/i3m_platform?sslmode=disable
       - JWT_SECRET=your-super-secret-jwt-key-here
-      - REDIS_URL=redis://:i3m_password@redis:6379
+      - REDIS_URL=redis://:i3m_password@redis:6379/1
     depends_on:
       - postgres
       - redis
@@ -189,12 +189,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/i3m_platform
       - SPRING_DATASOURCE_USERNAME=i3m_user
       - SPRING_DATASOURCE_PASSWORD=i3m_password
-      - SPRING_REDIS_DATABASE=0
-      - SPRING_REDIS_TIMEOUT=2000ms
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_REDIS_PASSWORD=i3m_password
-      - SPRING_REDIS_DATABASE=0
+      - SPRING_REDIS_DATABASE=2
       - SPRING_REDIS_TIMEOUT=2000ms
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3009/actuator/health"]
@@ -244,6 +239,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
+      - REDIS_DB=4
     depends_on:
       - postgres
       - redis
@@ -269,7 +265,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=4
+      - REDIS_DB=5
       - JWT_SECRET=your-super-secret-jwt-key-here
       - AUTH_SERVICE_URL=http://auth-service:3008
       - USER_SERVICE_URL=http://user-service:3009
@@ -300,7 +296,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=5
+      - REDIS_DB=6
       - JWT_SECRET=your-super-secret-jwt-key-here
       - AUTH_SERVICE_URL=http://auth-service:3008
       - USER_SERVICE_URL=http://user-service:3009
@@ -332,7 +328,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=4
+      - REDIS_DB=7
       - JWT_SECRET=supersecretjwtkey
       - JWT_EXPIRES_IN=1h
       - AUTH_SERVICE_URL=http://auth-service:3008
@@ -428,7 +424,7 @@ services:
     environment:
       - DEBUG=false
       - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_ai_db
-      - REDIS_URL=redis://:i3m_password@redis:6379/6
+      - REDIS_URL=redis://:i3m_password@redis:6379/8
       - SECRET_KEY=supersecretaisecretkey
       - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
       - AUTH_SERVICE_URL=http://auth-service:3008
@@ -453,7 +449,7 @@ services:
     environment:
       - DEBUG=false
       - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_ml_pipeline_db
-      - REDIS_URL=redis://:i3m_password@redis:6379/7
+      - REDIS_URL=redis://:i3m_password@redis:6379/9
       - SECRET_KEY=supersecretmlpipelinesecretkey
       - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
       - AUTH_SERVICE_URL=http://auth-service:3008
@@ -487,7 +483,7 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_DATA_REDIS_PASSWORD=i3m_password
-      - SPRING_DATA_REDIS_DATABASE=0
+      - SPRING_DATA_REDIS_DATABASE=10
     depends_on:
       - postgres
       - redis
@@ -703,7 +699,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=16
+      - REDIS_DB=15
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
     depends_on:
       - redis
@@ -833,7 +829,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=6
+      - REDIS_DB=14
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
     depends_on:
       - mongodb
@@ -881,7 +877,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=8
+      - REDIS_DB=9
     depends_on:
       - mongodb
       - redis
