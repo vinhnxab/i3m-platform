@@ -39,7 +39,7 @@ spring:
   
   data:
     redis:
-      host: redis
+      host: redis-service
       port: 6379
       password: i3m_password
       database: 0
