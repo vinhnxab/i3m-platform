@@ -18,9 +18,9 @@ func Load() *Config {
 		Port:         getEnv("PORT", "3044"),
 		DatabaseURL:  getEnv("DATABASE_URL", "postgres://i3m_user:i3m_password@postgres:5432/i3m_platform?sslmode=disable"),
 		Environment:  getEnv("ENVIRONMENT", "development"),
-		VaultURL:     getEnv("VAULT_URL", ""),
-		VaultToken:   getEnv("VAULT_TOKEN", ""),
-		VaultAddress: getEnv("VAULT_ADDRESS", ""),
+		VaultURL:     getEnv("VAULT_URL", "http://vault:8200"),
+		VaultToken:   getEnv("VAULT_TOKEN", "i3m_vault_token"),
+		VaultAddress: getEnv("VAULT_ADDRESS", "http://vault:8200"),
 	}
 }
 

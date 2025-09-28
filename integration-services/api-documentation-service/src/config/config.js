@@ -22,7 +22,7 @@ const config = {
     host: process.env.REDIS_HOST || 'redis',
     port: parseInt(process.env.REDIS_PORT) || 6379,
     password: process.env.REDIS_PASSWORD || 'i3m_password',
-    db: parseInt(process.env.REDIS_DB) || 9,
+    db: parseInt(process.env.REDIS_DB) || 6,
     retryDelayOnFailover: 100,
     maxRetriesPerRequest: 3,
   },
