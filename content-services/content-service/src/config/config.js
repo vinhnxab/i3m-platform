@@ -5,15 +5,13 @@ dotenv.config();
 
 const config = {
   // Server settings
-  port: process.env.PORT || 3020,
+  port: process.env.PORT || 3022,
   env: process.env.NODE_ENV || 'development',
 
   // Database settings
   mongodb: {
     uri: process.env.MONGODB_URI || 'mongodb://i3m_user:i3m_password@mongodb:27017/i3m_content_db?authSource=admin',
     options: {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,

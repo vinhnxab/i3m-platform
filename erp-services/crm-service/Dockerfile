@@ -33,10 +33,10 @@ RUN chown -R crm:crm /app
 
 USER crm
 
-EXPOSE 3033
+EXPOSE 3015
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3033/api/v1/crm/health || exit 1
+    CMD curl -f http://localhost:3015/actuator/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

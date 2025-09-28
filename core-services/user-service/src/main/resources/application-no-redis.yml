@@ -1,0 +1,50 @@
+server:
+  port: 3009
+
+spring:
+  application:
+    name: user-service
+  
+  datasource:
+    url: jdbc:postgresql://postgres:5432/i3m_platform
+    username: i3m_user
+    password: i3m_password
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: users
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+  
+  cache:
+    type: simple
+  
+  security:
+    jwt:
+      secret: ${JWT_SECRET:your-super-secret-jwt-key-here}
+      expiration: 900000 # 15 minutes in milliseconds
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.i3m.userservice: INFO
+    org.springframework.data.redis: WARN
+    org.springframework.cache: WARN

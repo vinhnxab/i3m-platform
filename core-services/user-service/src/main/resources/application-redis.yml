@@ -1,0 +1,16 @@
+spring:
+  redis:
+    host: redis
+    port: 6379
+    password: i3m_password
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 2
+        max-wait: 2000ms
+      shutdown-timeout: 200ms
+    connect-timeout: 2000ms
+    command-timeout: 2000ms

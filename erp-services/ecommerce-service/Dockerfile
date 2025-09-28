@@ -14,7 +14,7 @@ RUN apk add --no-cache maven
 RUN mvn clean package -DskipTests
 
 # Production stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-alpine AS production
 
 WORKDIR /app
 
@@ -37,6 +37,6 @@ EXPOSE 3032
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3032/api/v1/ecommerce/health || exit 1
+    CMD curl -f http://localhost:3032/actuator/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

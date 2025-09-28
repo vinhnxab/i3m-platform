@@ -1,167 +1,104 @@
-# I3M Platform - Makefile
-# Commands for building and managing the platform
+# I3M Platform - Docker CLI Management
+# Sử dụng hoàn toàn Docker CLI thay vì Docker Desktop
 
-.PHONY: help clean build build-all build-service start stop restart status logs
+.PHONY: help start stop restart status logs build clean health core erp analytics
 
 # Default target
 help:
-	@echo "I3M Platform - Available Commands"
-	@echo "================================="
+	@echo "I3M Platform - Docker CLI Management"
+	@echo "==================================="
 	@echo ""
-	@echo "Build Commands:"
-	@echo "  make build          - Build all services with auto cleanup"
-	@echo "  make build-all        - Build all services with full cleanup"
-	@echo "  make build-service    - Build a specific service"
-	@echo "  make build-core       - Build only core services"
+	@echo "Available commands:"
+	@echo "  make start       - Start all services"
+	@echo "  make stop        - Stop all services"
+	@echo "  make restart     - Restart all services"
+	@echo "  make status      - Show service status"
+	@echo "  make logs        - Show logs for all services"
+	@echo "  make build       - Build all services"
+	@echo "  make clean       - Clean up Docker resources"
+	@echo "  make health      - Check service health"
+	@echo "  make core        - Start only core services"
+	@echo "  make erp         - Start ERP services"
+	@echo "  make analytics   - Start analytics services"
 	@echo ""
-	@echo "Service Management:"
-	@echo "  make start            - Start all services"
-	@echo "  make stop             - Stop all services"
-	@echo "  make restart          - Restart all services"
-	@echo "  make start-core       - Start only core services"
-	@echo ""
-	@echo "Cleanup Commands:"
-	@echo "  make clean            - Clean up Docker resources"
-	@echo "  make clean-all        - Clean up everything including build cache"
-	@echo "  make clean-service    - Clean up specific service"
-	@echo ""
-	@echo "Monitoring:"
-	@echo "  make status           - Show service status"
-	@echo "  make logs             - Show logs for all services"
-	@echo "  make logs-service     - Show logs for specific service"
-	@echo "  make disk-usage       - Show disk usage"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make build-service SERVICE=auth-service"
-	@echo "  make logs-service SERVICE=auth-service"
-	@echo "  make clean-service SERVICE=auth-service"
 
-# Build commands
-build:
-	@echo "Building all services with auto cleanup..."
-	@./scripts/clean-build.sh build
-
-build-all:
-	@echo "Building all services with full cleanup..."
-	@./scripts/clean-build.sh build-all
-
-build-service:
-	@if [ -z "$(SERVICE)" ]; then \
-		echo "Error: SERVICE is required. Usage: make build-service SERVICE=auth-service"; \
-		exit 1; \
-	fi
-	@echo "Building service: $(SERVICE)"
-	@./scripts/build-service.sh $(SERVICE) --no-cache --pull
-
-build-core:
-	@echo "Building core services..."
-	@./scripts/clean-build.sh build postgres redis auth-service api-gateway
-
-# Service management
+# Start all services
 start:
-	@echo "Starting all services..."
-	@docker-compose up -d
+	@echo "🚀 Starting all I3M services..."
+	docker compose up -d
+	@echo "✅ All services started"
 
+# Stop all services
 stop:
-	@echo "Stopping all services..."
-	@docker-compose down
+	@echo "🛑 Stopping all I3M services..."
+	docker compose down
+	@echo "✅ All services stopped"
 
+# Restart all services
 restart:
-	@echo "Restarting all services..."
-	@docker-compose restart
+	@echo "🔄 Restarting all I3M services..."
+	docker compose restart
+	@echo "✅ All services restarted"
 
-start-core:
-	@echo "Starting core services..."
-	@docker-compose up -d postgres redis auth-service api-gateway
-
-# Cleanup commands
-clean:
-	@echo "Cleaning up Docker resources..."
-	@./scripts/clean-build.sh clean
-
-clean-all:
-	@echo "Cleaning up everything..."
-	@./scripts/clean-build.sh clean-all
-
-clean-service:
-	@if [ -z "$(SERVICE)" ]; then \
-		echo "Error: SERVICE is required. Usage: make clean-service SERVICE=auth-service"; \
-		exit 1; \
-	fi
-	@echo "Cleaning up service: $(SERVICE)"
-	@docker-compose stop $(SERVICE) 2>/dev/null || true
-	@docker-compose rm -f $(SERVICE) 2>/dev/null || true
-	@docker images --filter "reference=i3m-platform-$(SERVICE)" --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | tail -n +2 | while read line; do \
-		if [ ! -z "$$line" ]; then \
-			image_id=$$(echo "$$line" | awk '{print $$2}'); \
-			docker rmi "$$image_id" 2>/dev/null || true; \
-		fi; \
-	done
-
-# Monitoring commands
+# Show service status
 status:
-	@echo "Service status:"
-	@docker-compose ps
-
-logs:
-	@echo "Showing logs for all services..."
-	@docker-compose logs -f
-
-logs-service:
-	@if [ -z "$(SERVICE)" ]; then \
-		echo "Error: SERVICE is required. Usage: make logs-service SERVICE=auth-service"; \
-		exit 1; \
-	fi
-	@echo "Showing logs for service: $(SERVICE)"
-	@docker-compose logs -f $(SERVICE)
-
-disk-usage:
-	@echo "Docker disk usage:"
-	@docker system df
+	@echo "📊 I3M Platform Service Status:"
 	@echo ""
-	@echo "System disk usage:"
-	@df -h /
+	docker compose ps
+	@echo ""
+	@echo "Running containers:"
+	docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep i3m
 
-# Development commands
-dev:
-	@echo "Starting development environment..."
-	@docker-compose up -d postgres redis
-	@echo "Databases started. You can now run individual services locally."
+# Show logs
+logs:
+	@echo "📋 Showing logs for all services..."
+	docker compose logs -f
 
-# Quick commands for common tasks
-quick-build:
-	@echo "Quick build (core services only)..."
-	@make clean
-	@make build-core
+# Build all services
+build:
+	@echo "🔨 Building all I3M services..."
+	docker compose build --parallel
+	@echo "✅ All services built"
 
-quick-start:
-	@echo "Quick start (core services only)..."
-	@make start-core
+# Clean up Docker resources
+clean:
+	@echo "🧹 Cleaning up Docker resources..."
+	docker compose down
+	docker container prune -f
+	docker image prune -f
+	docker volume prune -f
+	docker network prune -f
+	@echo "✅ Docker cleanup completed"
 
-# Database commands
-db-reset:
-	@echo "Resetting databases..."
-	@docker-compose down -v
-	@docker-compose up -d postgres redis
-	@echo "Databases reset and started."
-
-# Frontend commands
-frontend-dev:
-	@echo "Starting frontend development server..."
-	@cd ui/master-dashboard && npm run dev
-
-frontend-build:
-	@echo "Building frontend..."
-	@cd ui/master-dashboard && npm run build
-
-# Test commands
-test:
-	@echo "Running tests..."
-	@./scripts/test-services.sh
-
-# Health check
+# Check service health
 health:
-	@echo "Checking service health..."
-	@curl -f http://localhost:3008/health || echo "Auth service not responding"
-	@curl -f http://localhost:3004/health || echo "API Gateway not responding"
-	@curl -f http://localhost:3009/health || echo "User service not responding"
+	@echo "🏥 Checking service health..."
+	@./manage-services.sh health
+
+# Start core services only
+core:
+	@echo "🔧 Starting core services..."
+	docker compose up -d postgres redis mongodb
+	sleep 5
+	docker compose up -d api-gateway auth-service user-service
+	@echo "✅ Core services started"
+
+# Start ERP services
+erp:
+	@echo "💼 Starting ERP services..."
+	docker compose up -d finance-service crm-service
+	@echo "✅ ERP services started"
+
+# Start analytics services
+analytics:
+	@echo "📈 Starting analytics services..."
+	docker compose up -d analytics-service ai-service
+	@echo "✅ Analytics services started"
+
+# Quick setup (build + start)
+setup: build start
+	@echo "🎉 I3M Platform setup completed!"
+
+# Full reset (clean + build + start)
+reset: clean build start
+	@echo "🔄 I3M Platform reset completed!"

@@ -33,11 +33,11 @@ RUN mkdir -p logs uploads && \
 USER content
 
 # Expose port
-EXPOSE 3021
+EXPOSE 3022
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3021/health || exit 1
+    CMD curl -f http://localhost:3022/health || exit 1
 
 # Start command
 CMD ["dumb-init", "node", "src/app.js"]
@@ -62,11 +62,11 @@ RUN mkdir -p logs uploads && \
 USER content
 
 # Expose port
-EXPOSE 3021
+EXPOSE 3022
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3021/health || exit 1
+    CMD curl -f http://localhost:3022/health || exit 1
 
 # Start command
 CMD ["dumb-init", "node", "src/app.js"]

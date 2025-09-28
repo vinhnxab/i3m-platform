@@ -16,9 +16,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	"github.com/i3m/secrets-management-service/internal/config"
-	"github.com/i3m/secrets-management-service/internal/handlers"
-	"github.com/i3m/secrets-management-service/internal/services"
+	"secrets-management-service/internal/config"
+	"secrets-management-service/internal/handlers"
+	"secrets-management-service/internal/services"
 )
 
 type SecretsManagementService struct {
@@ -54,20 +54,26 @@ func main() {
 	}
 	logger.Info("Connected to PostgreSQL successfully")
 
-	// Initialize Vault client
-	vaultConfig := vault.DefaultConfig()
-	vaultConfig.Address = cfg.VaultAddress
+	// Initialize Vault client (disabled)
+	var vaultClient *vault.Client
+	if cfg.VaultAddress != "" {
+		vaultConfig := vault.DefaultConfig()
+		vaultConfig.Address = cfg.VaultAddress
 
-	vaultClient, err := vault.NewClient(vaultConfig)
-	if err != nil {
-		logger.Fatalf("Failed to create Vault client: %v", err)
+		var err error
+		vaultClient, err = vault.NewClient(vaultConfig)
+		if err != nil {
+			logger.Warnf("Failed to create Vault client: %v", err)
+			vaultClient = nil
+		} else {
+			if cfg.VaultToken != "" {
+				vaultClient.SetToken(cfg.VaultToken)
+			}
+			logger.Info("Connected to HashiCorp Vault successfully")
+		}
+	} else {
+		logger.Info("Vault disabled - running without Vault integration")
 	}
-
-	if cfg.VaultToken != "" {
-		vaultClient.SetToken(cfg.VaultToken)
-	}
-
-	logger.Info("Connected to HashiCorp Vault successfully")
 
 	serviceInstances := services.New(db, vaultClient, logger, cfg)
 
@@ -195,22 +201,24 @@ func (s *SecretsManagementService) healthCheck(c *gin.Context) {
 		return
 	}
 
-	// Check Vault connection
-	health, err := s.vaultClient.Sys().Health()
-	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{
-			"status":    "unhealthy",
-			"error":     "Vault connection failed",
-			"timestamp": time.Now().UTC().Format(time.RFC3339),
-		})
-		return
+	// Check Vault connection (optional)
+	var vaultStatus string
+	if s.vaultClient != nil {
+		_, err := s.vaultClient.Sys().Health()
+		if err != nil {
+			vaultStatus = "disconnected"
+		} else {
+			vaultStatus = "connected"
+		}
+	} else {
+		vaultStatus = "disabled"
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":       "healthy",
 		"service":      "Secrets Management Service",
 		"version":      "1.0.0",
-		"vault_sealed": health.Sealed,
+		"vault_status": vaultStatus,
 		"timestamp":    time.Now().UTC().Format(time.RFC3339),
 	})
 }

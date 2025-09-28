@@ -36,11 +36,11 @@ RUN mkdir -p logs workspace artifacts uploads \
 USER mlpipeline
 
 # Expose port
-EXPOSE 3017
+EXPOSE 3018
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3017/health || exit 1
+    CMD curl -f http://localhost:3018/health || exit 1
 
 # Run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3017"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3018"]

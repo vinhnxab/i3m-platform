@@ -6,7 +6,7 @@ spring:
     name: ecommerce-service
   
   datasource:
-    url: jdbc:postgresql://localhost:5433/i3m_platform
+    url: jdbc:postgresql://postgres:5432/i3m_ecommerce_db
     username: i3m_user
     password: i3m_password
     driver-class-name: org.postgresql.Driver
@@ -23,11 +23,16 @@ spring:
   
   data:
     redis:
-      host: localhost
-      port: 6380
-      password: i3m_redis_password
+      host: redis
+      port: 6379
+      password: i3m_password
       database: 2
       timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 management:
   endpoints:

@@ -17,7 +17,6 @@ import (
 
 	"github.com/i3m/load-balancer-service/internal/config"
 	"github.com/i3m/load-balancer-service/internal/handlers"
-	"github.com/i3m/load-balancer-service/internal/services"
 )
 
 type LoadBalancerService struct {
@@ -25,7 +24,6 @@ type LoadBalancerService struct {
 	redisClient *redis.Client
 	logger      *logrus.Logger
 	config      *config.Config
-	services    *services.Services
 }
 
 func main() {
@@ -38,11 +36,11 @@ func main() {
 		logger.SetLevel(logrus.DebugLevel)
 	}
 
-	cfg := config.Load()
+	cfg := config.LoadConfig()
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
+		Password: "i3m_password", // Redis password
 		DB:       cfg.RedisDB,
 	})
 
@@ -52,13 +50,10 @@ func main() {
 	}
 	logger.Info("Connected to Redis successfully")
 
-	serviceInstances := services.New(redisClient, logger, cfg)
-
 	lbSvc := &LoadBalancerService{
 		redisClient: redisClient,
 		logger:      logger,
 		config:      cfg,
-		services:    serviceInstances,
 	}
 
 	lbSvc.setupRouter()
@@ -88,43 +83,37 @@ func (s *LoadBalancerService) setupRouter() {
 	v1 := s.router.Group("/api/v1/load-balancer")
 	{
 		// Service discovery and registration
-		v1.POST("/services/register", handlers.RegisterService(s.services))
-		v1.DELETE("/services/:id", handlers.DeregisterService(s.services))
-		v1.GET("/services", handlers.GetServices(s.services))
-		v1.GET("/services/:id", handlers.GetService(s.services))
+		v1.POST("/services/register", handlers.RegisterService)
+		v1.DELETE("/services/:id", handlers.DeregisterService)
+		v1.GET("/services", handlers.GetServices)
+		v1.GET("/services/:id", handlers.GetService)
 
 		// Health checks
-		v1.GET("/services/:id/health", handlers.CheckServiceHealth(s.services))
-		v1.POST("/services/:id/health", handlers.UpdateServiceHealth(s.services))
+		v1.GET("/services/:id/health", handlers.CheckServiceHealth)
+		v1.POST("/services/:id/health", handlers.UpdateServiceHealth)
 
 		// Load balancing configuration
-		v1.GET("/config", handlers.GetLoadBalancerConfig(s.services))
-		v1.PUT("/config", handlers.UpdateLoadBalancerConfig(s.services))
+		v1.GET("/config", handlers.GetLoadBalancerConfig)
+		v1.PUT("/config", handlers.UpdateLoadBalancerConfig)
 
 		// Traffic distribution
-		v1.GET("/traffic/stats", handlers.GetTrafficStats(s.services))
-		v1.POST("/traffic/distribute", handlers.DistributeTraffic(s.services))
+		v1.GET("/traffic/stats", handlers.GetTrafficStats)
+		v1.POST("/traffic/distribute", handlers.DistributeTraffic)
 
 		// Circuit breaker
-		v1.GET("/circuit-breaker", handlers.GetCircuitBreakerStatus(s.services))
-		v1.POST("/circuit-breaker/:serviceId/open", handlers.OpenCircuitBreaker(s.services))
-		v1.POST("/circuit-breaker/:serviceId/close", handlers.CloseCircuitBreaker(s.services))
-
-		// Upstream management
-		v1.GET("/upstreams", handlers.GetUpstreams(s.services))
-		v1.POST("/upstreams", handlers.CreateUpstream(s.services))
-		v1.PUT("/upstreams/:id", handlers.UpdateUpstream(s.services))
-		v1.DELETE("/upstreams/:id", handlers.DeleteUpstream(s.services))
+		v1.GET("/circuit-breaker", handlers.GetCircuitBreakerStatus)
+		v1.POST("/circuit-breaker/:serviceId/open", handlers.OpenCircuitBreaker)
+		v1.POST("/circuit-breaker/:serviceId/close", handlers.CloseCircuitBreaker)
 
 		// Metrics and monitoring
-		v1.GET("/metrics/services", handlers.GetServiceMetrics(s.services))
-		v1.GET("/metrics/requests", handlers.GetRequestMetrics(s.services))
+		v1.GET("/metrics/services", handlers.GetServiceMetrics)
+		v1.GET("/metrics/requests", handlers.GetRequestMetrics)
 	}
 
 	// Proxy endpoints - these handle actual traffic routing
 	proxy := s.router.Group("/proxy")
 	{
-		proxy.Any("/*path", handlers.ProxyRequest(s.services))
+		proxy.Any("/*path", handlers.ProxyRequest)
 	}
 }
 

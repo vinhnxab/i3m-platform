@@ -37,6 +37,6 @@ EXPOSE 3035
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3035/api/v1/agriculture/health || exit 1
+    CMD curl -f http://localhost:3035/actuator/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

@@ -19,10 +19,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
 
-	"github.com/i3m/security-service/internal/config"
-	"github.com/i3m/security-service/internal/handlers"
-	"github.com/i3m/security-service/internal/middleware"
-	"github.com/i3m/security-service/internal/services"
+	"security-service/internal/config"
+	"security-service/internal/handlers"
+	"security-service/internal/middleware"
+	"security-service/internal/services"
 )
 
 type SecurityService struct {

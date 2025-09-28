@@ -33,10 +33,10 @@ RUN chown -R integration:integration /app
 
 USER integration
 
-EXPOSE 3051
+EXPOSE 3053
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3051/api/v1/integration/health || exit 1
+    CMD curl -f http://localhost:3053/api/v1/integration/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

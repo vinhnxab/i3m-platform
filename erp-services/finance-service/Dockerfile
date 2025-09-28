@@ -37,6 +37,6 @@ EXPOSE 3028
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3028/api/v1/finance/health || exit 1
+    CMD curl -f http://localhost:3028/actuator/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

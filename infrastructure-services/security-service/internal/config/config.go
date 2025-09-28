@@ -42,11 +42,11 @@ func Load() *Config {
 		Port:        getEnv("PORT", "3040"),
 		Environment: getEnv("ENVIRONMENT", "development"),
 
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://i3m_user:i3m_password@localhost:5433/i3m_platform?sslmode=disable"),
+		DatabaseURL: getEnv("DATABASE_URL", "postgres://i3m_user:i3m_password@postgres:5432/i3m_platform?sslmode=disable"),
 
-		RedisHost:     getEnv("REDIS_HOST", "localhost"),
-		RedisPort:     getEnv("REDIS_PORT", "6380"),
-		RedisPassword: getEnv("REDIS_PASSWORD", "i3m_redis_password"),
+		RedisHost:     getEnv("REDIS_HOST", "redis"),
+		RedisPort:     getEnv("REDIS_PORT", "6379"),
+		RedisPassword: getEnv("REDIS_PASSWORD", "i3m_password"),
 		RedisDB:       redisDB,
 
 		JWTSecret:     getEnv("JWT_SECRET", "your-super-secret-jwt-key-here"),

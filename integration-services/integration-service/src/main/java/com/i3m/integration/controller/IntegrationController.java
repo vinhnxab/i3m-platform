@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -46,12 +47,12 @@ public class IntegrationController {
     @GetMapping("/integrations")
     public ResponseEntity<Page<IntegrationDto>> getIntegrations(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String search,
             Pageable pageable) {
         Page<IntegrationDto> integrations = integrationService.getIntegrations(
-            tenantId, type, status, search, pageable);
+            tenantId, name, type, status, pageable);
         return ResponseEntity.ok(integrations);
     }
 
@@ -68,8 +69,12 @@ public class IntegrationController {
             @RequestHeader("X-Tenant-ID") UUID tenantId,
             @PathVariable UUID id,
             @Valid @RequestBody IntegrationDto integrationDto) {
-        IntegrationDto updated = integrationService.updateIntegration(tenantId, id, integrationDto);
-        return ResponseEntity.ok(updated);
+        Optional<IntegrationDto> updated = integrationService.updateIntegration(tenantId, id, integrationDto);
+        if (updated.isPresent()) {
+            return ResponseEntity.ok(updated.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/integrations/{id}")
@@ -100,10 +105,10 @@ public class IntegrationController {
     @GetMapping("/webhooks")
     public ResponseEntity<Page<WebhookDto>> getWebhooks(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
-            @RequestParam(required = false) String event,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String status,
             Pageable pageable) {
-        Page<WebhookDto> webhooks = integrationService.getWebhooks(tenantId, event, status, pageable);
+        Page<WebhookDto> webhooks = integrationService.getWebhooks(tenantId, name, status, pageable);
         return ResponseEntity.ok(webhooks);
     }
 
@@ -118,10 +123,11 @@ public class IntegrationController {
 
     @PostMapping("/webhooks/receive/{webhookId}")
     public ResponseEntity<Map<String, Object>> receiveWebhook(
+            @RequestHeader("X-Tenant-ID") UUID tenantId,
             @PathVariable UUID webhookId,
             @RequestBody Map<String, Object> payload,
             @RequestHeader Map<String, String> headers) {
-        Map<String, Object> result = integrationService.processWebhook(webhookId, payload, headers);
+        Map<String, Object> result = integrationService.processWebhook(tenantId, payload, headers);
         return ResponseEntity.ok(result);
     }
 
@@ -137,12 +143,12 @@ public class IntegrationController {
     @GetMapping("/sync")
     public ResponseEntity<Page<DataSyncDto>> getDataSyncs(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
-            @RequestParam(required = false) String source,
-            @RequestParam(required = false) String destination,
+            @RequestParam(required = false) String sourceSystem,
+            @RequestParam(required = false) String targetSystem,
             @RequestParam(required = false) String status,
             Pageable pageable) {
         Page<DataSyncDto> syncs = integrationService.getDataSyncs(
-            tenantId, source, destination, status, pageable);
+            tenantId, sourceSystem, targetSystem, status, pageable);
         return ResponseEntity.ok(syncs);
     }
 
@@ -182,10 +188,10 @@ public class IntegrationController {
     @GetMapping("/etl/jobs")
     public ResponseEntity<Map<String, Object>> getETLJobs(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String type,
             Pageable pageable) {
-        Map<String, Object> jobs = integrationService.getETLJobs(tenantId, status, type, pageable);
+        Map<String, Object> jobs = integrationService.getETLJobs(tenantId, name, status, pageable);
         return ResponseEntity.ok(jobs);
     }
 
@@ -253,17 +259,17 @@ public class IntegrationController {
     @GetMapping("/analytics/metrics")
     public ResponseEntity<Map<String, Object>> getMetrics(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
-            @RequestParam(required = false) String timeRange,
-            @RequestParam(required = false) String metricType) {
-        Map<String, Object> metrics = integrationService.getMetrics(tenantId, timeRange, metricType);
+            @RequestParam(required = false) String metricType,
+            @RequestParam(required = false) String timeRange) {
+        Map<String, Object> metrics = integrationService.getMetrics(tenantId, metricType, timeRange);
         return ResponseEntity.ok(metrics);
     }
 
     @GetMapping("/analytics/errors")
     public ResponseEntity<Map<String, Object>> getErrorAnalysis(
             @RequestHeader("X-Tenant-ID") UUID tenantId,
-            @RequestParam(required = false) String timeRange) {
-        Map<String, Object> errors = integrationService.getErrorAnalysis(tenantId, timeRange);
+            @RequestParam(required = false) String integrationId) {
+        Map<String, Object> errors = integrationService.getErrorAnalysis(tenantId, integrationId);
         return ResponseEntity.ok(errors);
     }
 

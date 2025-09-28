@@ -18,7 +18,7 @@ CREATE SCHEMA IF NOT EXISTS shared;
 -- =====================
 
 -- Tenants table for multi-tenant architecture
-CREATE TABLE core.tenants (
+CREATE TABLE IF NOT EXISTS core.tenants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     subdomain VARCHAR(100) UNIQUE NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE core.tenants (
 );
 
 -- Users table with multi-tenant support
-CREATE TABLE core.users (
+CREATE TABLE IF NOT EXISTS core.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES core.tenants(id) ON DELETE CASCADE,
     email VARCHAR(255) NOT NULL,

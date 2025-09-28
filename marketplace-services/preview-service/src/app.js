@@ -3,12 +3,12 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const redis = require('redis');
 
 const config = require('./config/config');
 const logger = require('./config/logger');
-const { connectDB } = require('./config/database');
+// const { connectDB } = require('./config/database');
 const { connectRedis } = require('./config/redis');
 const { setupMetrics, metricsMiddleware } = require('./config/metrics');
 

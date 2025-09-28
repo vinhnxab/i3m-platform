@@ -15,9 +15,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	"github.com/i3m/cost-optimization-service/internal/config"
-	"github.com/i3m/cost-optimization-service/internal/handlers"
-	"github.com/i3m/cost-optimization-service/internal/services"
+	"cost-optimization-service/internal/config"
+	"cost-optimization-service/internal/handlers"
+	"cost-optimization-service/internal/services"
 )
 
 type CostOptimizationService struct {

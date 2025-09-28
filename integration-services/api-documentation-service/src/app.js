@@ -5,12 +5,12 @@ const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const mongoose = require('mongoose');
-const redis = require('redis');
+// const redis = require('redis');
 
 const config = require('./config/config');
 const logger = require('./config/logger');
-const { connectDB } = require('./config/database');
-const { connectRedis } = require('./config/redis');
+// const { connectDB } = require('./config/database');
+// const { connectRedis } = require('./config/redis');
 const { setupMetrics, metricsMiddleware } = require('./config/metrics');
 
 // Import routes
@@ -215,9 +215,9 @@ async function startServer() {
     await connectDB();
     logger.info('Connected to MongoDB');
 
-    // Connect to Redis
-    await connectRedis();
-    logger.info('Connected to Redis');
+    // Connect to Redis (optional)
+    // await connectRedis();
+    // logger.info('Connected to Redis');
 
     // Start server
     const server = app.listen(config.port, () => {

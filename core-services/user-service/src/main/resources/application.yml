@@ -1,8 +1,6 @@
 # User Service Configuration
 server:
   port: 3009
-  servlet:
-    context-path: /api/v1
 
 spring:
   application:
@@ -12,7 +10,7 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:development}
   
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/i3m_platform}
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/i3m_platform}
     username: ${DATABASE_USERNAME:i3m_user}
     password: ${DATABASE_PASSWORD:i3m_password}
     driver-class-name: org.postgresql.Driver
@@ -39,24 +37,19 @@ spring:
         order_updates: true
         batch_versioned_data: true
   
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:i3m_password}
-    database: 0
-    timeout: 2000ms
-    jedis:
-      pool:
-        max-active: 20
-        max-idle: 10
-        min-idle: 2
-        max-wait: 2000ms
+  data:
+    redis:
+      host: redis
+      port: 6379
+      password: i3m_password
+      database: 0
+      timeout: 2000ms
   
   cache:
-    type: redis
-    redis:
-      time-to-live: 600000 # 10 minutes
-      cache-null-values: false
+    type: simple
+    # redis:
+    #   time-to-live: 600000 # 10 minutes
+    #   cache-null-values: false
   
   security:
     jwt:

@@ -7,7 +7,7 @@ const config = {
   
   // Database configuration
   mongodb: {
-    uri: process.env.MONGODB_URI || 'mongodb://i3m_user:i3m_password@localhost:27017/i3m_api_docs_db?authSource=admin',
+    uri: process.env.MONGODB_URI || 'mongodb://i3m_user:i3m_password@mongodb:27017/i3m_api_docs_db?authSource=admin',
     options: {
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -19,10 +19,10 @@ const config = {
   
   // Redis configuration
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT) || 6380,
-    password: process.env.REDIS_PASSWORD || 'i3m_redis_password',
-    db: parseInt(process.env.REDIS_DB) || 6,
+    host: process.env.REDIS_HOST || 'redis',
+    port: parseInt(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || 'i3m_password',
+    db: parseInt(process.env.REDIS_DB) || 9,
     retryDelayOnFailover: 100,
     maxRetriesPerRequest: 3,
   },

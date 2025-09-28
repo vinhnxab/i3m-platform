@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     
     # Server settings
     HOST: str = "0.0.0.0"
-    PORT: int = 3017
+    PORT: int = 3018
     WORKERS: int = 1
     
     # Security settings

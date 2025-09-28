@@ -167,6 +167,25 @@ services:
       - PORT=3009
       - DATABASE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
       - JWT_SECRET=your-super-secret-jwt-key-here
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=i3m_password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/i3m_platform
+      - SPRING_DATASOURCE_USERNAME=i3m_user
+      - SPRING_DATASOURCE_PASSWORD=i3m_password
+      - SPRING_REDIS_DATABASE=0
+      - SPRING_REDIS_TIMEOUT=2000ms
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=i3m_password
+      - SPRING_REDIS_DATABASE=0
+      - SPRING_REDIS_TIMEOUT=2000ms
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       - postgres
     networks:
@@ -310,23 +329,30 @@ services:
     networks:
       - i3m-network
 
-  # CRM Service (Python FastAPI, PostgreSQL)
+  # CRM Service (Java Spring Boot, PostgreSQL)
   crm-service:
     build:
       context: ./erp-services/crm-service
       dockerfile: Dockerfile
-      target: production
     container_name: i3m-crm-service
     ports:
       - "3015:3015"
     environment:
-      - DEBUG=false
-      - DATABASE_URL=postgresql+asyncpg://i3m_user:i3m_password@postgres:5432/i3m_crm_db
-      - REDIS_URL=redis://:i3m_password@redis:6379/5
-      - SECRET_KEY=supersecretcrmsecretkey
-      - BACKEND_CORS_ORIGINS=http://localhost:3000,http://localhost:3001
-      - AUTH_SERVICE_URL=http://auth-service:3008
-      - USER_SERVICE_URL=http://user-service:3009
+      - SPRING_PROFILES_ACTIVE=production
+      - SERVER_PORT=3015
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/i3m_crm_db?sslmode=disable
+      - SPRING_DATASOURCE_USERNAME=i3m_user
+      - SPRING_DATASOURCE_PASSWORD=i3m_password
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=i3m_password
+      - SPRING_DATA_REDIS_DATABASE=5
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3015/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       - postgres
       - redis
@@ -445,7 +471,7 @@ services:
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
       - SPRING_DATA_REDIS_PASSWORD=i3m_password
-      - SPRING_DATA_REDIS_DATABASE=18
+      - SPRING_DATA_REDIS_DATABASE=0
     depends_on:
       - postgres
       - redis
@@ -580,16 +606,25 @@ services:
     networks:
       - i3m-network
 
-  # Load Balancer Service (Python FastAPI)
+  # Load Balancer Service (Go)
   load-balancer-service:
     build:
       context: ./infrastructure-services/load-balancer-service
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: i3m-load-balancer-service
     ports:
       - "3043:3043"
     environment:
-      - DEBUG=false
+      - PORT=3043
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - LOG_LEVEL=info
+      - ENVIRONMENT=development
+    depends_on:
+      - redis
     networks:
       - i3m-network
 
@@ -674,7 +709,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=i3m_password
-      - REDIS_DB=17
+      - REDIS_DB=0
       - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
       - EMAIL_FROM=noreply@i3m-platform.com
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
@@ -795,12 +830,12 @@ services:
     build:
       context: ./integration-services/integration-service
       dockerfile: Dockerfile
-    container_name: i3m-integration-service
+    container_name: i3m-platform-integration-service
     ports:
-      - "3051:3051"
+      - "3053:3053"
     environment:
       - SPRING_PROFILES_ACTIVE=production
-      - SERVER_PORT=3051
+      - SERVER_PORT=3053
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/i3m_platform?sslmode=disable
       - SPRING_DATASOURCE_USERNAME=i3m_user
       - SPRING_DATASOURCE_PASSWORD=i3m_password
