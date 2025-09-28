@@ -1,0 +1,100 @@
+# Networking Improvements for I3M Platform
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-nodeport
+  namespace: i3m-platform
+  labels:
+    app: api-gateway
+    tier: core
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30000
+    protocol: TCP
+    name: http
+  selector:
+    app: api-gateway
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: i3m-platform-ingress
+  namespace: i3m-platform
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+spec:
+  rules:
+  - host: i3m-platform.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 3000
+      - path: /api/auth
+        pathType: Prefix
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 3001
+      - path: /api/users
+        pathType: Prefix
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 3009
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-service
+  namespace: i3m-platform
+spec:
+  type: ExternalName
+  externalName: host.docker.internal
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-registry-access
+  namespace: i3m-platform
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-nodeport
+  namespace: monitoring
+spec:
+  type: NodePort
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30001
+    protocol: TCP
+    name: grafana
+  selector:
+    app.kubernetes.io/name: grafana
