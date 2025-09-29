@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -606,4 +607,645 @@ func generateRandomToken(length int) (string, error) {
 func hashToken(token string) string {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(token), bcrypt.DefaultCost)
 	return string(hash)
+}
+
+// Multi-group membership functions
+
+// GetUserGroups retrieves all groups for a user
+func (as *AuthService) getUserGroups(userID string) ([]UserGroup, error) {
+	query := `
+		SELECT ug.id, ug.name, ug.description, ug.permissions, ug.priority, ugm.role, ugm.assigned_at
+		FROM core.user_groups ug
+		JOIN core.user_group_memberships ugm ON ug.id = ugm.group_id
+		WHERE ugm.user_id = $1 AND ugm.is_active = true AND ug.is_active = true
+		ORDER BY ug.priority DESC, ugm.assigned_at ASC
+	`
+
+	rows, err := as.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user groups: %w", err)
+	}
+	defer rows.Close()
+
+	var groups []UserGroup
+	for rows.Next() {
+		var group UserGroup
+		var permissionsJSON string
+		var assignedAt time.Time
+
+		err := rows.Scan(&group.ID, &group.Name, &group.Description, &permissionsJSON, &group.Priority, &group.Role, &assignedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user group: %w", err)
+		}
+
+		// Parse permissions JSON
+		if err := json.Unmarshal([]byte(permissionsJSON), &group.Permissions); err != nil {
+			as.logger.Warnf("Failed to parse permissions for group %s: %v", group.Name, err)
+			group.Permissions = make(map[string]interface{})
+		}
+
+		group.AssignedAt = assignedAt
+		groups = append(groups, group)
+	}
+
+	return groups, nil
+}
+
+// GetUserPermissions aggregates permissions from all user groups
+func (as *AuthService) getUserPermissions(userID string) (map[string]interface{}, error) {
+	groups, err := as.getUserGroups(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Aggregate permissions from all groups
+	permissions := make(map[string]interface{})
+	for _, group := range groups {
+		for key, value := range group.Permissions {
+			// Higher priority groups can override lower priority permissions
+			if existing, exists := permissions[key]; !exists || group.Priority > getGroupPriority(existing) {
+				permissions[key] = value
+			}
+		}
+	}
+
+	return permissions, nil
+}
+
+// AssignUserToGroup assigns a user to a group
+func (as *AuthService) assignUserToGroup(userID, groupID, role, assignedBy string) error {
+	query := `
+		INSERT INTO core.user_group_memberships (user_id, group_id, role, assigned_by)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, group_id, role) DO UPDATE SET
+			is_active = true,
+			assigned_at = CURRENT_TIMESTAMP,
+			assigned_by = $4
+	`
+
+	_, err := as.db.Exec(query, userID, groupID, role, assignedBy)
+	if err != nil {
+		return fmt.Errorf("failed to assign user to group: %w", err)
+	}
+
+	// Clear permissions cache
+	as.clearUserPermissionsCache(userID)
+
+	return nil
+}
+
+// RemoveUserFromGroup removes a user from a group
+func (as *AuthService) removeUserFromGroup(userID, groupID, role string) error {
+	query := `
+		UPDATE core.user_group_memberships 
+		SET is_active = false
+		WHERE user_id = $1 AND group_id = $2 AND role = $3
+	`
+
+	_, err := as.db.Exec(query, userID, groupID, role)
+	if err != nil {
+		return fmt.Errorf("failed to remove user from group: %w", err)
+	}
+
+	// Clear permissions cache
+	as.clearUserPermissionsCache(userID)
+
+	return nil
+}
+
+// GetUserPermissionsCache retrieves cached permissions for a user
+func (as *AuthService) getUserPermissionsCache(userID string) (map[string]interface{}, []UserGroup, error) {
+	query := `
+		SELECT permissions, groups, expires_at
+		FROM core.user_permissions_cache
+		WHERE user_id = $1 AND expires_at > CURRENT_TIMESTAMP
+	`
+
+	var permissionsJSON, groupsJSON string
+	var expiresAt time.Time
+
+	err := as.db.QueryRow(query, userID).Scan(&permissionsJSON, &groupsJSON, &expiresAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil, nil // No cache found
+		}
+		return nil, nil, fmt.Errorf("failed to get permissions cache: %w", err)
+	}
+
+	var permissions map[string]interface{}
+	var groups []UserGroup
+
+	if err := json.Unmarshal([]byte(permissionsJSON), &permissions); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse cached permissions: %w", err)
+	}
+
+	if err := json.Unmarshal([]byte(groupsJSON), &groups); err != nil {
+		return nil, nil, fmt.Errorf("failed to parse cached groups: %w", err)
+	}
+
+	return permissions, groups, nil
+}
+
+// SetUserPermissionsCache caches permissions for a user
+func (as *AuthService) setUserPermissionsCache(userID string, permissions map[string]interface{}, groups []UserGroup) error {
+	permissionsJSON, _ := json.Marshal(permissions)
+	groupsJSON, _ := json.Marshal(groups)
+
+	query := `
+		INSERT INTO core.user_permissions_cache (user_id, permissions, groups, expires_at)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id) DO UPDATE SET
+			permissions = $2,
+			groups = $3,
+			last_updated = CURRENT_TIMESTAMP,
+			expires_at = $4
+	`
+
+	expiresAt := time.Now().Add(time.Hour) // Cache for 1 hour
+	_, err := as.db.Exec(query, userID, string(permissionsJSON), string(groupsJSON), expiresAt)
+	if err != nil {
+		return fmt.Errorf("failed to cache permissions: %w", err)
+	}
+
+	return nil
+}
+
+// ClearUserPermissionsCache clears cached permissions for a user
+func (as *AuthService) clearUserPermissionsCache(userID string) error {
+	query := `DELETE FROM core.user_permissions_cache WHERE user_id = $1`
+	_, err := as.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to clear permissions cache: %w", err)
+	}
+	return nil
+}
+
+// Helper function to get group priority from existing permission
+func getGroupPriority(permission interface{}) int {
+	// This is a simplified implementation
+	// In a real system, you'd want to track group priority more systematically
+	return 0
+}
+
+// Group CRUD database methods
+
+// CreateGroup creates a new group
+func (as *AuthService) createGroup(tenantID, name, description string, permissions map[string]interface{}, priority int) (string, error) {
+	permissionsJSON, _ := json.Marshal(permissions)
+
+	query := `
+		INSERT INTO core.user_groups (tenant_id, name, description, permissions, priority, is_active)
+		VALUES ($1, $2, $3, $4, $5, true)
+		RETURNING id
+	`
+
+	var groupID string
+	err := as.db.QueryRow(query, tenantID, name, description, string(permissionsJSON), priority).Scan(&groupID)
+	if err != nil {
+		return "", fmt.Errorf("failed to create group: %w", err)
+	}
+
+	return groupID, nil
+}
+
+// GetGroupByID retrieves a group by ID
+func (as *AuthService) getGroupByID(groupID string) (*UserGroup, error) {
+	query := `
+		SELECT id, name, description, permissions, priority, is_active, created_at, updated_at
+		FROM core.user_groups
+		WHERE id = $1 AND is_active = true
+	`
+
+	var group UserGroup
+	var permissionsJSON string
+	var isActive bool
+
+	err := as.db.QueryRow(query, groupID).Scan(
+		&group.ID, &group.Name, &group.Description, &permissionsJSON,
+		&group.Priority, &isActive, &group.CreatedAt, &group.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get group: %w", err)
+	}
+
+	// Parse permissions JSON
+	if err := json.Unmarshal([]byte(permissionsJSON), &group.Permissions); err != nil {
+		as.logger.Warnf("Failed to parse permissions for group %s: %v", group.Name, err)
+		group.Permissions = make(map[string]interface{})
+	}
+
+	return &group, nil
+}
+
+// UpdateGroup updates a group
+func (as *AuthService) updateGroup(groupID, name, description string, permissions map[string]interface{}, priority int) error {
+	permissionsJSON, _ := json.Marshal(permissions)
+
+	query := `
+		UPDATE core.user_groups 
+		SET name = $1, description = $2, permissions = $3, priority = $4, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $5 AND is_active = true
+	`
+
+	result, err := as.db.Exec(query, name, description, string(permissionsJSON), priority, groupID)
+	if err != nil {
+		return fmt.Errorf("failed to update group: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("group not found or already inactive")
+	}
+
+	return nil
+}
+
+// DeleteGroup deletes a group (soft delete)
+func (as *AuthService) deleteGroup(groupID string) error {
+	query := `
+		UPDATE core.user_groups 
+		SET is_active = false, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`
+
+	result, err := as.db.Exec(query, groupID)
+	if err != nil {
+		return fmt.Errorf("failed to delete group: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("group not found")
+	}
+
+	return nil
+}
+
+// GetGroupsByTenant retrieves groups for a tenant with pagination
+func (as *AuthService) getGroupsByTenant(tenantID string, page, pageSize int) ([]UserGroup, int, error) {
+	// Get total count
+	countQuery := `
+		SELECT COUNT(*) FROM core.user_groups 
+		WHERE tenant_id = $1 AND is_active = true
+	`
+	var totalCount int
+	err := as.db.QueryRow(countQuery, tenantID).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get groups count: %w", err)
+	}
+
+	// Get groups with pagination
+	offset := (page - 1) * pageSize
+	query := `
+		SELECT id, name, description, permissions, priority, created_at, updated_at
+		FROM core.user_groups
+		WHERE tenant_id = $1 AND is_active = true
+		ORDER BY priority DESC, created_at ASC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := as.db.Query(query, tenantID, pageSize, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get groups: %w", err)
+	}
+	defer rows.Close()
+
+	var groups []UserGroup
+	for rows.Next() {
+		var group UserGroup
+		var permissionsJSON string
+
+		err := rows.Scan(
+			&group.ID, &group.Name, &group.Description, &permissionsJSON,
+			&group.Priority, &group.CreatedAt, &group.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan group: %w", err)
+		}
+
+		// Parse permissions JSON
+		if err := json.Unmarshal([]byte(permissionsJSON), &group.Permissions); err != nil {
+			as.logger.Warnf("Failed to parse permissions for group %s: %v", group.Name, err)
+			group.Permissions = make(map[string]interface{})
+		}
+
+		groups = append(groups, group)
+	}
+
+	return groups, totalCount, nil
+}
+
+// Multi-group management handlers
+
+// GetUserGroupsHandler retrieves all groups for a user
+func (as *AuthService) getUserGroupsHandler(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "User ID is required",
+		})
+		return
+	}
+
+	// Check if requesting user has permission to view this user's groups
+	requestingUserID := c.GetString("user_id")
+	if requestingUserID != userID {
+		// TODO: Add permission check here
+		// For now, allow any authenticated user to view groups
+	}
+
+	groups, err := as.getUserGroups(userID)
+	if err != nil {
+		as.logger.Errorf("Failed to get user groups: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to retrieve user groups",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, UserGroupsResponse{
+		Groups: groups,
+		Count:  len(groups),
+	})
+}
+
+// GetUserPermissionsHandler retrieves aggregated permissions for a user
+func (as *AuthService) getUserPermissionsHandler(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "User ID is required",
+		})
+		return
+	}
+
+	// Check cache first
+	permissions, groups, err := as.getUserPermissionsCache(userID)
+	if err != nil {
+		as.logger.Errorf("Failed to get permissions cache: %v", err)
+	}
+
+	// If no cache or cache miss, get fresh data
+	if permissions == nil || groups == nil {
+		permissions, err = as.getUserPermissions(userID)
+		if err != nil {
+			as.logger.Errorf("Failed to get user permissions: %v", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				Error:   "internal_error",
+				Message: "Failed to retrieve user permissions",
+			})
+			return
+		}
+
+		groups, err = as.getUserGroups(userID)
+		if err != nil {
+			as.logger.Errorf("Failed to get user groups: %v", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				Error:   "internal_error",
+				Message: "Failed to retrieve user groups",
+			})
+			return
+		}
+
+		// Cache the results
+		if err := as.setUserPermissionsCache(userID, permissions, groups); err != nil {
+			as.logger.Warnf("Failed to cache permissions: %v", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, UserPermissionsResponse{
+		Permissions: permissions,
+		Groups:      groups,
+	})
+}
+
+// AssignUserToGroupHandler assigns a user to a group
+func (as *AuthService) assignUserToGroupHandler(c *gin.Context) {
+	var req AssignUserToGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	// Get the requesting user ID
+	assignedBy := c.GetString("user_id")
+	if assignedBy == "" {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{
+			Error:   "unauthorized",
+			Message: "User not authenticated",
+		})
+		return
+	}
+
+	// Assign user to group
+	err := as.assignUserToGroup(req.UserID, req.GroupID, req.Role, assignedBy)
+	if err != nil {
+		as.logger.Errorf("Failed to assign user to group: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to assign user to group",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "User successfully assigned to group",
+	})
+}
+
+// RemoveUserFromGroupHandler removes a user from a group
+func (as *AuthService) removeUserFromGroupHandler(c *gin.Context) {
+	var req RemoveUserFromGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	// Remove user from group
+	err := as.removeUserFromGroup(req.UserID, req.GroupID, req.Role)
+	if err != nil {
+		as.logger.Errorf("Failed to remove user from group: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to remove user from group",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "User successfully removed from group",
+	})
+}
+
+// Group CRUD handlers
+
+// CreateGroupHandler creates a new group
+func (as *AuthService) createGroupHandler(c *gin.Context) {
+	var req CreateGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	// Get tenant ID from context
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		tenantID = "00000000-0000-0000-0000-000000000000" // Default tenant
+	}
+
+	// Create group
+	groupID, err := as.createGroup(tenantID, req.Name, req.Description, req.Permissions, req.Priority)
+	if err != nil {
+		as.logger.Errorf("Failed to create group: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to create group",
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, CreateGroupResponse{
+		Message: "Group created successfully",
+		GroupID: groupID,
+	})
+}
+
+// GetGroupHandler retrieves a group by ID
+func (as *AuthService) getGroupHandler(c *gin.Context) {
+	groupID := c.Param("group_id")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Group ID is required",
+		})
+		return
+	}
+
+	group, err := as.getGroupByID(groupID)
+	if err != nil {
+		as.logger.Errorf("Failed to get group: %v", err)
+		c.JSON(http.StatusNotFound, ErrorResponse{
+			Error:   "group_not_found",
+			Message: "Group not found",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, group)
+}
+
+// UpdateGroupHandler updates a group
+func (as *AuthService) updateGroupHandler(c *gin.Context) {
+	groupID := c.Param("group_id")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Group ID is required",
+		})
+		return
+	}
+
+	var req UpdateGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Invalid request format",
+		})
+		return
+	}
+
+	err := as.updateGroup(groupID, req.Name, req.Description, req.Permissions, req.Priority)
+	if err != nil {
+		as.logger.Errorf("Failed to update group: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to update group",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "Group updated successfully",
+	})
+}
+
+// DeleteGroupHandler deletes a group
+func (as *AuthService) deleteGroupHandler(c *gin.Context) {
+	groupID := c.Param("group_id")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error:   "invalid_request",
+			Message: "Group ID is required",
+		})
+		return
+	}
+
+	err := as.deleteGroup(groupID)
+	if err != nil {
+		as.logger.Errorf("Failed to delete group: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to delete group",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SuccessResponse{
+		Message: "Group deleted successfully",
+	})
+}
+
+// ListGroupsHandler lists all groups for a tenant
+func (as *AuthService) listGroupsHandler(c *gin.Context) {
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		tenantID = "00000000-0000-0000-0000-000000000000" // Default tenant
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	groups, totalCount, err := as.getGroupsByTenant(tenantID, page, pageSize)
+	if err != nil {
+		as.logger.Errorf("Failed to get groups: %v", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error:   "internal_error",
+			Message: "Failed to get groups",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, GroupListResponse{
+		Groups:     groups,
+		TotalCount: totalCount,
+		Page:       page,
+		PageSize:   pageSize,
+	})
 }

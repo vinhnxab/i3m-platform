@@ -203,3 +203,88 @@ type ValidationErrorResponse struct {
 	Error  string            `json:"error"`
 	Errors []ValidationError `json:"errors"`
 }
+
+// Multi-group membership models
+
+// UserGroup model
+type UserGroup struct {
+	ID          string                 `json:"id" db:"id"`
+	Name        string                 `json:"name" db:"name"`
+	Description string                 `json:"description" db:"description"`
+	Permissions map[string]interface{} `json:"permissions" db:"permissions"`
+	Priority    int                    `json:"priority" db:"priority"`
+	Role        string                 `json:"role" db:"role"`
+	AssignedAt  time.Time              `json:"assigned_at" db:"assigned_at"`
+	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
+}
+
+// UserGroupMembership model
+type UserGroupMembership struct {
+	ID         string     `json:"id" db:"id"`
+	UserID     string     `json:"user_id" db:"user_id"`
+	GroupID    string     `json:"group_id" db:"group_id"`
+	Role       string     `json:"role" db:"role"`
+	AssignedBy string     `json:"assigned_by" db:"assigned_by"`
+	AssignedAt time.Time  `json:"assigned_at" db:"assigned_at"`
+	IsActive   bool       `json:"is_active" db:"is_active"`
+	ExpiresAt  *time.Time `json:"expires_at" db:"expires_at"`
+}
+
+// Group assignment request
+type AssignUserToGroupRequest struct {
+	UserID  string `json:"user_id" binding:"required"`
+	GroupID string `json:"group_id" binding:"required"`
+	Role    string `json:"role" binding:"required"`
+}
+
+// Group removal request
+type RemoveUserFromGroupRequest struct {
+	UserID  string `json:"user_id" binding:"required"`
+	GroupID string `json:"group_id" binding:"required"`
+	Role    string `json:"role" binding:"required"`
+}
+
+// User groups response
+type UserGroupsResponse struct {
+	Groups []UserGroup `json:"groups"`
+	Count  int         `json:"count"`
+}
+
+// User permissions response
+type UserPermissionsResponse struct {
+	Permissions map[string]interface{} `json:"permissions"`
+	Groups      []UserGroup            `json:"groups"`
+}
+
+// Group CRUD request/response types
+
+// CreateGroupRequest represents the request to create a new group
+type CreateGroupRequest struct {
+	Name        string                 `json:"name" binding:"required"`
+	Description string                 `json:"description"`
+	Permissions map[string]interface{} `json:"permissions"`
+	Priority    int                    `json:"priority"`
+}
+
+// CreateGroupResponse represents the response after creating a group
+type CreateGroupResponse struct {
+	Message string `json:"message"`
+	GroupID string `json:"group_id"`
+}
+
+// UpdateGroupRequest represents the request to update a group
+type UpdateGroupRequest struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Permissions map[string]interface{} `json:"permissions"`
+	Priority    int                    `json:"priority"`
+}
+
+// GroupListResponse represents the response for listing groups
+type GroupListResponse struct {
+	Groups     []UserGroup `json:"groups"`
+	TotalCount int         `json:"total_count"`
+	Page       int         `json:"page"`
+	PageSize   int         `json:"page_size"`
+}

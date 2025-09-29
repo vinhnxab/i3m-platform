@@ -164,6 +164,26 @@ func (as *AuthService) setupRouter() {
 			admin.GET("/sessions", as.getAllSessions)
 			admin.DELETE("/sessions/:session_id", as.revokeSessionAdmin)
 		}
+
+		// Multi-group management routes
+		as.logger.Info("🚀 Setting up groups routes...")
+		groups := v1.Group("/groups")
+		groups.Use(as.authMiddleware())
+		{
+			// User group management routes
+			groups.GET("/users/:user_id", as.getUserGroupsHandler)
+			groups.GET("/users/:user_id/permissions", as.getUserPermissionsHandler)
+			groups.POST("/assign", as.assignUserToGroupHandler)
+			groups.DELETE("/remove", as.removeUserFromGroupHandler)
+
+			// Group CRUD operations (admin only)
+			groups.POST("/", as.createGroupHandler)
+			groups.GET("/:group_id", as.getGroupHandler)
+			groups.PUT("/:group_id", as.updateGroupHandler)
+			groups.DELETE("/:group_id", as.deleteGroupHandler)
+			groups.GET("/", as.listGroupsHandler)
+		}
+		as.logger.Info("✅ Groups routes setup completed")
 	}
 }
 
