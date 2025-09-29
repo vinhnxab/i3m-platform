@@ -372,11 +372,19 @@ interface LanguageProviderProps {
 export function LanguageProvider({
   children,
   defaultLanguage = 'en',
-  storageKey = 'i3m-language',
+  storageKey = 'language',
 }: LanguageProviderProps) {
   const [language, setLanguageState] = useState<Language>(defaultLanguage);
 
   useEffect(() => {
+    // Migrate old i3m-language key to new language key
+    const oldLanguage = localStorage.getItem('i3m-language');
+    if (oldLanguage && !localStorage.getItem(storageKey)) {
+      localStorage.setItem(storageKey, oldLanguage);
+      localStorage.removeItem('i3m-language');
+      console.log('🔧 Migrated i3m-language to language:', oldLanguage);
+    }
+
     // Load saved language
     try {
       const savedLanguage = localStorage.getItem(storageKey) as Language;

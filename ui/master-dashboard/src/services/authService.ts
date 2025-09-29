@@ -9,6 +9,15 @@ export interface AuthUser {
   email: string;
   role: string;
   name: string;
+  userGroups?: UserGroup[];
+}
+
+export interface UserGroup {
+  groupId: string;
+  groupName: string;
+  role: string;
+  permissions: Record<string, any>;
+  assignedAt: string;
 }
 
 class AuthService {
@@ -16,11 +25,61 @@ class AuthService {
 
   constructor() {
     this.token = this.getStoredToken();
+    this.migrateLocalStorage();
+  }
+
+  // Migrate old localStorage keys to new format
+  private migrateLocalStorage(): void {
+    console.log('🔧 Starting localStorage migration...');
+    
+    // Migrate i3m-language to language (preserve the data)
+    const oldLanguage = localStorage.getItem('i3m-language');
+    if (oldLanguage) {
+      localStorage.setItem('language', oldLanguage);
+      localStorage.removeItem('i3m-language');
+      console.log('🔧 Migrated i3m-language to language:', oldLanguage);
+    }
+
+    // Migrate user_data to userData if userData doesn't exist
+    const oldUserData = localStorage.getItem('user_data');
+    const currentUserData = localStorage.getItem('userData');
+    
+    if (oldUserData && !currentUserData) {
+      try {
+        const parsedUserData = JSON.parse(oldUserData);
+        // Convert platformRoles to userGroups if it exists
+        if (parsedUserData.platformRoles) {
+          parsedUserData.userGroups = parsedUserData.platformRoles;
+          delete parsedUserData.platformRoles;
+        }
+        localStorage.setItem('userData', JSON.stringify(parsedUserData));
+        console.log('🔧 Migrated user_data to userData');
+      } catch (error) {
+        console.error('Error migrating user_data:', error);
+      }
+    }
+    
+    // ALWAYS remove old user_data key after migration (aggressive cleanup)
+    if (localStorage.getItem('user_data')) {
+      localStorage.removeItem('user_data');
+      console.log('🗑️ Removed old user_data key');
+    }
+
+    // Clean up any other old keys
+    const oldKeys = ['authRefreshToken', 'authUser', 'user'];
+    oldKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        console.log('🔧 Removed old key:', key);
+      }
+    });
+    
+    console.log('✅ localStorage migration completed');
   }
 
   // Get token from localStorage
   private getStoredToken(): string | null {
-    return localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('authToken');
+    return localStorage.getItem('authToken') || localStorage.getItem('token');
   }
 
   // Check if user is authenticated
@@ -35,7 +94,7 @@ class AuthService {
     }
 
     try {
-      const response = await axios.get(`${AUTH_SERVICE_URL}/auth/profile`, {
+      const response = await axios.get(`${AUTH_SERVICE_URL}/api/v1/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${this.token}`,
           'Content-Type': 'application/json'
@@ -43,22 +102,61 @@ class AuthService {
       });
 
       if (response.status === 200) {
+        // Fetch user's groups
+        let userGroups: UserGroup[] = [];
+        try {
+          const rolesResponse = await axios.get(`${AUTH_SERVICE_URL}/api/v1/auth/groups/users/${response.data.id}`, {
+            headers: {
+              'Authorization': `Bearer ${this.token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (rolesResponse.status === 200 && rolesResponse.data.groups) {
+            userGroups = rolesResponse.data.groups.map((group: any) => ({
+              groupId: group.id,
+              groupName: group.name,
+              role: group.role || 'member',
+              permissions: group.permissions || {},
+              assignedAt: group.assigned_at || new Date().toISOString()
+            }));
+          }
+        } catch (rolesError) {
+          console.log('🔍 Could not fetch user groups during validation:', rolesError);
+        }
+        
+        const userData = {
+          id: response.data.id,
+          email: response.data.email,
+          role: response.data.role,
+          name: `${response.data.first_name || ''} ${response.data.last_name || ''}`.trim() || response.data.email,
+          userGroups: userGroups
+        };
+        
+        // Update stored user data with latest user groups
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
         return { 
           isValid: true, 
-          user: {
-            id: response.data.id,
-            email: response.data.email,
-            role: response.data.role,
-            name: `${response.data.first_name || ''} ${response.data.last_name || ''}`.trim() || response.data.email
-          }
+          user: userData
         };
       } else {
         return { isValid: false, error: 'Invalid token response' };
       }
     } catch (error: any) {
-      console.log('🔍 Token validation failed:', error.response?.status);
+      console.log('🔍 Token validation failed, using stored data:', error.response?.status);
       
-      // Clear invalid token
+      // Try to use stored user data as fallback
+      const userData = this.getUserData();
+      if (userData) {
+        console.log('🔍 Using stored user data as fallback');
+        return { 
+          isValid: true, 
+          user: userData 
+        };
+      }
+      
+      // Clear invalid token only if no stored data
       this.clearAuth();
       
       return { 
@@ -72,14 +170,13 @@ class AuthService {
   clearAuth(): void {
     console.log('🧹 Clearing authentication data...');
     
-    // Clear tokens
+    // Clear tokens (using camelCase consistently)
     localStorage.removeItem('authToken');
-    localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('authRefreshToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('authUser');
-    localStorage.removeItem('user_data');
+    localStorage.removeItem('tenantToken');
+    localStorage.removeItem('userData');
+    localStorage.removeItem('currentTenant');
+    localStorage.removeItem('user_data'); // Remove old key
     
     // Clear session storage
     sessionStorage.clear();
@@ -88,6 +185,37 @@ class AuthService {
     this.token = null;
     
     console.log('✅ Authentication data cleared');
+  }
+
+  // Force cleanup of old localStorage keys
+  forceCleanup(): void {
+    console.log('🧹 Force cleaning up old localStorage keys...');
+    
+    const oldKeys = [
+      'user_data', 
+      'i3m-language', 
+      'authRefreshToken', 
+      'authUser', 
+      'user',
+      'token' // Remove old token key if it exists
+    ];
+    
+    oldKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        console.log('🗑️ Removed old key:', key);
+      }
+    });
+    
+    console.log('✅ Force cleanup completed');
+  }
+
+  // Force migration and cleanup (can be called manually)
+  forceMigration(): void {
+    console.log('🔄 Force migration and cleanup...');
+    this.migrateLocalStorage();
+    this.forceCleanup();
+    console.log('✅ Force migration completed');
   }
 
   // Set new token
@@ -103,13 +231,13 @@ class AuthService {
 
   // Get refresh token
   getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken') || localStorage.getItem('authRefreshToken');
+    return localStorage.getItem('refreshToken');
   }
 
   // Get user data from localStorage
   getUserData(): any | null {
     try {
-      const userData = localStorage.getItem('user_data');
+      const userData = localStorage.getItem('userData');
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error('Error parsing user data:', error);
@@ -125,12 +253,12 @@ class AuthService {
 
   // Set tenant context for API calls
   setTenantContext(tenantId: string): void {
-    localStorage.setItem('current_tenant', tenantId);
+    localStorage.setItem('currentTenant', tenantId);
   }
 
   // Get tenant context for API calls
   getTenantContext(): string {
-    return localStorage.getItem('current_tenant') || this.getCurrentTenant() || 'default-tenant';
+    return localStorage.getItem('currentTenant') || this.getCurrentTenant() || 'default-tenant';
   }
 
   // Set refresh token
@@ -152,18 +280,24 @@ class AuthService {
   // Register new user
   async register(data: any): Promise<{ success: boolean; user?: AuthUser; error?: string }> {
     try {
-      const response = await axios.post(`${AUTH_SERVICE_URL}/auth/register`, data);
-      if (response.status === 201) {
+      const response = await axios.post(`${AUTH_SERVICE_URL}/api/v1/auth/register`, data);
+      if (response.status === 200) {
         const { access_token, refresh_token, user } = response.data;
         this.setTokens(access_token, refresh_token);
+        
+        // Prepare user data (new users won't have groups yet)
+        const userData = {
+          ...user,
+          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+          userGroups: []
+        };
+        
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(userData));
+        
         return { 
           success: true, 
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email
-          }
+          user: userData
         };
       } else {
         return { success: false, error: response.data.message || 'Registration failed' };
@@ -256,6 +390,62 @@ class AuthService {
         };
       }
 
+      // Mock mode for testing - simulate server error
+      if (import.meta.env.VITE_MOCK_AUTH === 'true') {
+        console.log('🔍 AuthService - Mock mode enabled, simulating error');
+        
+        // Simulate network error
+        if (email === 'error@test.com') {
+          return {
+            success: false,
+            error: 'Network error: Unable to connect to authentication server'
+          };
+        }
+        
+        // Simulate invalid credentials
+        if (email === 'wrong@test.com' || password === 'wrongpassword') {
+          return {
+            success: false,
+            error: 'Invalid email or password. Please check your credentials and try again.'
+          };
+        }
+        
+        // Simulate successful login for demo
+        if (email === 'admin@i3m.com' && password === 'admin123') {
+          const mockUser = {
+            id: '1',
+            email: email,
+            role: 'PLATFORM_ADMIN',
+            name: 'Admin User',
+            userGroups: [
+              {
+                groupId: 'admin-group-1',
+                groupName: 'Platform Administrators',
+                role: 'admin',
+                permissions: { admin: true, manageUsers: true, manageGroups: true },
+                assignedAt: new Date().toISOString()
+              }
+            ]
+          };
+          
+          this.setTokens('mock-access-token', 'mock-refresh-token');
+          localStorage.setItem('userData', JSON.stringify(mockUser));
+          
+          return {
+            success: true,
+            token: 'mock-access-token',
+            refreshToken: 'mock-refresh-token',
+            user: mockUser
+          };
+        }
+        
+        // Default error for other cases
+        return {
+          success: false,
+          error: 'Invalid credentials. Please try again.'
+        };
+      }
+
       console.log('🔍 AuthService - Sending login request:', { email, password: '***' });
       
       const requestData = {
@@ -268,31 +458,86 @@ class AuthService {
       const response = await axios.post(`${AUTH_SERVICE_URL}/api/v1/auth/login`, requestData);
 
       if (response.status === 200) {
-        const { access_token, refresh_token, user } = response.data;
+        const { access_token, refresh_token, user, tenant_token, primary_group } = response.data;
         this.setTokens(access_token, refresh_token);
         
-        // Store user data in localStorage
-        if (user) {
-          localStorage.setItem('user_data', JSON.stringify(user));
-          console.log('🔍 AuthService - User data stored:', user);
+        // Store tenant token if available
+        if (tenant_token) {
+          localStorage.setItem('tenantToken', tenant_token);
+          console.log('🔍 AuthService - Tenant token stored');
         }
+        
+        // Fetch user's groups (fallback if not provided in response)
+        let userGroups: UserGroup[] = [];
+        if (primary_group) {
+          // Use primary group from response
+          userGroups = [{
+            groupId: primary_group.id,
+            groupName: primary_group.name,
+            role: primary_group.role || 'member',
+            permissions: primary_group.permissions || {},
+            assignedAt: primary_group.assigned_at || new Date().toISOString()
+          }];
+        } else {
+          // Fallback: fetch from API
+          try {
+            const rolesResponse = await axios.get(`${AUTH_SERVICE_URL}/api/v1/auth/groups/users/${user.id}`, {
+              headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (rolesResponse.status === 200 && rolesResponse.data.groups) {
+              userGroups = rolesResponse.data.groups.map((group: any) => ({
+                groupId: group.id,
+                groupName: group.name,
+                role: group.role || 'member',
+                permissions: group.permissions || {},
+                assignedAt: group.assigned_at || new Date().toISOString()
+              }));
+            }
+          } catch (rolesError) {
+            console.log('🔍 Could not fetch user groups:', rolesError);
+            // Continue without groups - user might not be in any groups yet
+          }
+        }
+        
+        // Prepare enhanced user data with primary group/role and tenant info
+        const userData = {
+          ...user,
+          name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email,
+          userGroups: userGroups,
+          primaryGroup: primary_group,
+          primaryRole: user.primary_role,
+          tenantToken: tenant_token,
+          tenantId: user.tenant_id
+        };
+        
+        // Store user data in localStorage
+        localStorage.setItem('userData', JSON.stringify(userData));
+        console.log('🔍 AuthService - Enhanced user data stored:', userData);
         
         return { 
           success: true, 
           token: access_token, 
           refreshToken: refresh_token, 
-          user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email
-          }
+          user: userData
         };
       } else {
         return { success: false, error: response.data.message || 'Login failed' };
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Mock mode fallback for network errors
+      if (import.meta.env.VITE_MOCK_AUTH === 'true') {
+        return {
+          success: false,
+          error: 'Network error: Unable to connect to authentication server. Please try again later.'
+        };
+      }
+      
       return { 
         success: false, 
         error: error.response?.data?.message || error.response?.data?.error || 'Login failed' 
@@ -356,6 +601,40 @@ class AuthService {
       return false;
     }
   }
+
+  // Get user groups
+  async getUserGroups(userId: string) {
+    const response = await axios.get(`${API_GATEWAY_URL}/api/v1/auth/groups/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      }
+    });
+    return response.data;
+  }
+
+  // Set primary role
+  async setPrimaryRole(userId: string, primaryRole: string) {
+    const response = await axios.post(`${API_GATEWAY_URL}/api/v1/auth/primary-role/set`, {
+      user_id: userId,
+      primary_role: primaryRole
+    }, {
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      }
+    });
+    return response.data;
+  }
+
+  // Get primary role
+  async getPrimaryRole(userId: string) {
+    const response = await axios.get(`${API_GATEWAY_URL}/api/v1/auth/primary-role/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${this.token}`
+      }
+    });
+    return response.data;
+  }
+
 }
 
 export const authService = new AuthService();

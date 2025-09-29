@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -420,6 +421,87 @@ func (as *AuthService) validateTenant(tenantID string) (*Tenant, error) {
 	}
 
 	return tenant, nil
+}
+
+// Get user's primary group and role
+func (as *AuthService) getUserPrimaryGroupAndRole(userID string) (*UserGroup, *string, error) {
+	// Get primary group
+	groupQuery := `
+		SELECT ug.id, ug.name, ug.description, ug.permissions, ug.priority, uga.role, uga.assigned_at
+		FROM core.user_groups ug
+		JOIN core.user_group_assignments uga ON ug.id = uga.group_id
+		WHERE uga.user_id = $1 AND uga.is_primary = TRUE AND ug.is_active = true
+		LIMIT 1
+	`
+
+	var group UserGroup
+	var permissionsJSON string
+	var assignedAt time.Time
+
+	err := as.db.QueryRow(groupQuery, userID).Scan(
+		&group.ID, &group.Name, &group.Description, &permissionsJSON,
+		&group.Priority, &group.Role, &assignedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil, nil // No primary group found
+		}
+		return nil, nil, fmt.Errorf("failed to get primary group: %w", err)
+	}
+
+	// Parse permissions JSON
+	if err := json.Unmarshal([]byte(permissionsJSON), &group.Permissions); err != nil {
+		as.logger.Warnf("Failed to parse permissions for group %s: %v", group.Name, err)
+		group.Permissions = make(map[string]interface{})
+	}
+
+	group.AssignedAt = assignedAt
+
+	// Get primary role
+	roleQuery := `
+		SELECT uga.role
+		FROM core.user_group_assignments uga
+		WHERE uga.user_id = $1 AND uga.is_primary_role = TRUE
+		LIMIT 1
+	`
+
+	var primaryRole string
+	err = as.db.QueryRow(roleQuery, userID).Scan(&primaryRole)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return &group, nil, nil // No primary role found
+		}
+		return &group, nil, fmt.Errorf("failed to get primary role: %w", err)
+	}
+
+	return &group, &primaryRole, nil
+}
+
+// Generate tenant-specific token
+func (as *AuthService) generateTenantToken(user *User) (string, error) {
+	now := time.Now()
+	tenantTokenExpiry := now.Add(24 * time.Hour) // 24 hours for tenant token
+
+	tenantTokenClaims := &Claims{
+		UserID:   user.ID,
+		TenantID: user.TenantID,
+		Role:     user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(tenantTokenExpiry),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+			Issuer:    "i3m-auth-service",
+			Subject:   user.ID,
+		},
+	}
+
+	tenantToken := jwt.NewWithClaims(jwt.SigningMethodHS256, tenantTokenClaims)
+	tenantTokenString, err := tenantToken.SignedString([]byte(as.config.JWTSecret))
+	if err != nil {
+		return "", err
+	}
+
+	return tenantTokenString, nil
 }
 
 // Start background cleanup job

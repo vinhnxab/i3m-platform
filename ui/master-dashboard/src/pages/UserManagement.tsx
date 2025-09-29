@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/button';
 import { toast } from 'sonner';
 import { User, userService } from '@/services/userService';
-import { usePermissions, PERMISSION_LEVELS } from '@/hooks/usePermissions';
+import { usePermissions, PERMISSION_LEVELS } from '../hooks/usePermissions';
 import { Plus, RefreshCcw } from 'lucide-react';
 import { AuthLayout } from '@/shared/components/layout/AuthLayout';
 import { UserTable, UserFilters, UserStats, UserDialogs, CreateUserDialog } from '@/features/users';

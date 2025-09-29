@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui-dashboard-dev
+  namespace: i3m-platform
+  labels:
+    app: ui-dashboard-dev
+    component: frontend
+    environment: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui-dashboard-dev
+  template:
+    metadata:
+      labels:
+        app: ui-dashboard-dev
+        component: frontend
+        environment: development
+    spec:
+      containers:
+      - name: ui-dashboard-dev
+        image: i3m-platform/ui-dashboard-dev:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5173
+        env:
+        - name: NODE_ENV
+          value: "development"
+        - name: VITE_API_BASE_URL
+          value: "http://api-gateway-service:8080"
+        - name: CHOKIDAR_USEPOLLING
+          value: "true"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: node-modules
+          mountPath: /app/node_modules
+      volumes:
+      - name: node-modules
+        emptyDir: {}

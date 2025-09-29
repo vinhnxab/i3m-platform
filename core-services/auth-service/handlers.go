@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -71,6 +72,13 @@ func (as *AuthService) login(c *gin.Context) {
 		return
 	}
 
+	// Get user's primary group and role
+	primaryGroup, primaryRole, err := as.getUserPrimaryGroupAndRole(user.ID)
+	if err != nil {
+		as.logger.Warnf("Failed to get user primary group/role: %v", err)
+		// Continue without primary group/role
+	}
+
 	// Generate tokens
 	accessToken, refreshToken, expiresIn, err := as.generateTokenPair(user)
 	if err != nil {
@@ -80,6 +88,15 @@ func (as *AuthService) login(c *gin.Context) {
 			Message: "Failed to generate authentication tokens",
 		})
 		return
+	}
+
+	// Generate tenant-specific token if user belongs to a tenant
+	var tenantToken string
+	if user.TenantID != "" && user.TenantID != "00000000-0000-0000-0000-000000000000" {
+		tenantToken, err = as.generateTenantToken(user)
+		if err != nil {
+			as.logger.Warnf("Failed to generate tenant token: %v", err)
+		}
 	}
 
 	// Create session
@@ -99,13 +116,30 @@ func (as *AuthService) login(c *gin.Context) {
 	// Remove sensitive data from user response
 	user.PasswordHash = ""
 
-	c.JSON(http.StatusOK, LoginResponse{
+	// Prepare enhanced user data with primary group/role
+	enhancedUser := *user
+	enhancedUser.PrimaryRole = primaryRole
+
+	// Create response with enhanced data
+	response := LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    expiresIn,
-		User:         *user,
-	})
+		User:         enhancedUser,
+	}
+
+	// Add tenant token if available
+	if tenantToken != "" {
+		response.TenantToken = &tenantToken
+	}
+
+	// Add primary group information if available
+	if primaryGroup != nil {
+		response.PrimaryGroup = primaryGroup
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // Register handler
@@ -286,6 +320,335 @@ func (as *AuthService) getProfile(c *gin.Context) {
 
 	user.PasswordHash = ""
 	c.JSON(http.StatusOK, user)
+}
+
+// Set primary group handler
+func (as *AuthService) setPrimaryGroupHandler(c *gin.Context) {
+	var req struct {
+		UserID  string `json:"user_id" binding:"required"`
+		GroupID string `json:"group_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		as.logger.WithError(err).Error("Invalid request")
+		c.JSON(400, ErrorResponse{
+			Error:   "Invalid request",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Start transaction
+	tx, err := as.db.Begin()
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to begin transaction")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to begin transaction",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	// First, set all groups to non-primary for this user
+	query1 := `
+		UPDATE core.user_group_assignments 
+		SET is_primary = FALSE 
+		WHERE user_id = $1
+	`
+
+	_, err = tx.Exec(query1, req.UserID)
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to clear primary groups")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to clear primary groups",
+		})
+		return
+	}
+
+	// Then, set the specified group as primary
+	query2 := `
+		UPDATE core.user_group_assignments 
+		SET is_primary = TRUE 
+		WHERE user_id = $1 AND group_id = $2
+	`
+
+	result, err := tx.Exec(query2, req.UserID, req.GroupID)
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to set primary group")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to set primary group",
+		})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to get rows affected")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to set primary group",
+		})
+		return
+	}
+
+	if rowsAffected == 0 {
+		c.JSON(404, ErrorResponse{
+			Error:   "Group not found",
+			Message: "User is not assigned to this group",
+		})
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		as.logger.WithError(err).Error("Failed to commit transaction")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to commit transaction",
+		})
+		return
+	}
+
+	as.logger.WithFields(logrus.Fields{
+		"user_id":  req.UserID,
+		"group_id": req.GroupID,
+	}).Info("Primary group updated successfully")
+
+	c.JSON(200, SuccessResponse{
+		Message: "Primary group updated successfully",
+		Data: map[string]interface{}{
+			"user_id":  req.UserID,
+			"group_id": req.GroupID,
+		},
+	})
+}
+
+// Get primary group handler
+func (as *AuthService) getPrimaryGroupHandler(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		c.JSON(400, ErrorResponse{
+			Error:   "Invalid request",
+			Message: "User ID is required",
+		})
+		return
+	}
+
+	// Get user's primary group
+	query := `
+		SELECT uga.group_id, g.name, g.description, uga.role, uga.is_primary, uga.assigned_at
+		FROM core.user_group_assignments uga
+		JOIN core.user_groups g ON uga.group_id = g.id
+		WHERE uga.user_id = $1 AND uga.is_primary = TRUE
+	`
+
+	var group struct {
+		GroupID     string    `json:"group_id" db:"group_id"`
+		Name        string    `json:"name" db:"name"`
+		Description string    `json:"description" db:"description"`
+		Role        string    `json:"role" db:"role"`
+		IsPrimary   bool      `json:"is_primary" db:"is_primary"`
+		AssignedAt  time.Time `json:"assigned_at" db:"assigned_at"`
+	}
+
+	err := as.db.QueryRow(query, userID).Scan(
+		&group.GroupID, &group.Name, &group.Description, &group.Role,
+		&group.IsPrimary, &group.AssignedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(404, ErrorResponse{
+				Error:   "Primary group not found",
+				Message: "User has no primary group assigned",
+			})
+			return
+		}
+		as.logger.WithError(err).Error("Failed to get primary group")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to get primary group",
+		})
+		return
+	}
+
+	as.logger.WithField("user_id", userID).Info("Primary group retrieved successfully")
+
+	c.JSON(200, SuccessResponse{
+		Message: "Primary group retrieved successfully",
+		Data: map[string]interface{}{
+			"user_id": userID,
+			"group":   group,
+		},
+	})
+}
+
+// Set primary role handler
+func (as *AuthService) setPrimaryRoleHandler(c *gin.Context) {
+	var req struct {
+		UserID  string `json:"user_id" binding:"required"`
+		GroupID string `json:"group_id" binding:"required"`
+		Role    string `json:"role" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		as.logger.WithError(err).Error("Invalid request")
+		c.JSON(400, ErrorResponse{
+			Error:   "Invalid request",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	// Start transaction
+	tx, err := as.db.Begin()
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to begin transaction")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to begin transaction",
+		})
+		return
+	}
+	defer tx.Rollback()
+
+	// First, set all roles to non-primary for this user
+	query1 := `
+		UPDATE core.user_group_assignments 
+		SET is_primary_role = FALSE 
+		WHERE user_id = $1
+	`
+
+	_, err = tx.Exec(query1, req.UserID)
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to clear primary roles")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to clear primary roles",
+		})
+		return
+	}
+
+	// Then, set the specified role as primary
+	query2 := `
+		UPDATE core.user_group_assignments 
+		SET is_primary_role = TRUE 
+		WHERE user_id = $1 AND group_id = $2 AND role = $3
+	`
+
+	result, err := tx.Exec(query2, req.UserID, req.GroupID, req.Role)
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to set primary role")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to set primary role",
+		})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		as.logger.WithError(err).Error("Failed to get rows affected")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to set primary role",
+		})
+		return
+	}
+
+	if rowsAffected == 0 {
+		c.JSON(404, ErrorResponse{
+			Error:   "Role not found",
+			Message: "User does not have this role in this group",
+		})
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		as.logger.WithError(err).Error("Failed to commit transaction")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to commit transaction",
+		})
+		return
+	}
+
+	as.logger.WithFields(logrus.Fields{
+		"user_id":  req.UserID,
+		"group_id": req.GroupID,
+		"role":     req.Role,
+	}).Info("Primary role updated successfully")
+
+	c.JSON(200, SuccessResponse{
+		Message: "Primary role updated successfully",
+		Data: map[string]interface{}{
+			"user_id":  req.UserID,
+			"group_id": req.GroupID,
+			"role":     req.Role,
+		},
+	})
+}
+
+// Get primary role handler
+func (as *AuthService) getPrimaryRoleHandler(c *gin.Context) {
+	userID := c.Param("user_id")
+	if userID == "" {
+		c.JSON(400, ErrorResponse{
+			Error:   "Invalid request",
+			Message: "User ID is required",
+		})
+		return
+	}
+
+	// Get user's primary role
+	query := `
+		SELECT uga.group_id, g.name, g.description, uga.role, uga.is_primary_role, uga.assigned_at
+		FROM core.user_group_assignments uga
+		JOIN core.user_groups g ON uga.group_id = g.id
+		WHERE uga.user_id = $1 AND uga.is_primary_role = TRUE
+	`
+
+	var role struct {
+		GroupID       string    `json:"group_id" db:"group_id"`
+		Name          string    `json:"name" db:"name"`
+		Description   string    `json:"description" db:"description"`
+		Role          string    `json:"role" db:"role"`
+		IsPrimaryRole bool      `json:"is_primary_role" db:"is_primary_role"`
+		AssignedAt    time.Time `json:"assigned_at" db:"assigned_at"`
+	}
+
+	err := as.db.QueryRow(query, userID).Scan(
+		&role.GroupID, &role.Name, &role.Description, &role.Role,
+		&role.IsPrimaryRole, &role.AssignedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(404, ErrorResponse{
+				Error:   "Primary role not found",
+				Message: "User has no primary role assigned",
+			})
+			return
+		}
+		as.logger.WithError(err).Error("Failed to get primary role")
+		c.JSON(500, ErrorResponse{
+			Error:   "Database error",
+			Message: "Failed to get primary role",
+		})
+		return
+	}
+
+	as.logger.WithField("user_id", userID).Info("Primary role retrieved successfully")
+
+	c.JSON(200, SuccessResponse{
+		Message: "Primary role retrieved successfully",
+		Data: map[string]interface{}{
+			"user_id": userID,
+			"role":    role,
+		},
+	})
 }
 
 // Update profile handler
@@ -614,11 +977,11 @@ func hashToken(token string) string {
 // GetUserGroups retrieves all groups for a user
 func (as *AuthService) getUserGroups(userID string) ([]UserGroup, error) {
 	query := `
-		SELECT ug.id, ug.name, ug.description, ug.permissions, ug.priority, ugm.role, ugm.assigned_at
+		SELECT ug.id, ug.name, ug.description, ug.permissions, ug.priority, uga.role, uga.assigned_at
 		FROM core.user_groups ug
-		JOIN core.user_group_memberships ugm ON ug.id = ugm.group_id
-		WHERE ugm.user_id = $1 AND ugm.is_active = true AND ug.is_active = true
-		ORDER BY ug.priority DESC, ugm.assigned_at ASC
+		JOIN core.user_group_assignments uga ON ug.id = uga.group_id
+		WHERE uga.user_id = $1 AND ug.is_active = true
+		ORDER BY ug.priority DESC, uga.assigned_at ASC
 	`
 
 	rows, err := as.db.Query(query, userID)
@@ -675,15 +1038,14 @@ func (as *AuthService) getUserPermissions(userID string) (map[string]interface{}
 // AssignUserToGroup assigns a user to a group
 func (as *AuthService) assignUserToGroup(userID, groupID, role, assignedBy string) error {
 	query := `
-		INSERT INTO core.user_group_memberships (user_id, group_id, role, assigned_by)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (user_id, group_id, role) DO UPDATE SET
-			is_active = true,
-			assigned_at = CURRENT_TIMESTAMP,
-			assigned_by = $4
+		INSERT INTO core.user_group_assignments (user_id, group_id, role)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (user_id, group_id) DO UPDATE SET
+			role = $3,
+			assigned_at = CURRENT_TIMESTAMP
 	`
 
-	_, err := as.db.Exec(query, userID, groupID, role, assignedBy)
+	_, err := as.db.Exec(query, userID, groupID, role)
 	if err != nil {
 		return fmt.Errorf("failed to assign user to group: %w", err)
 	}
@@ -697,7 +1059,7 @@ func (as *AuthService) assignUserToGroup(userID, groupID, role, assignedBy strin
 // RemoveUserFromGroup removes a user from a group
 func (as *AuthService) removeUserFromGroup(userID, groupID, role string) error {
 	query := `
-		UPDATE core.user_group_memberships 
+		UPDATE core.user_group_assignments 
 		SET is_active = false
 		WHERE user_id = $1 AND group_id = $2 AND role = $3
 	`
@@ -973,60 +1335,9 @@ func (as *AuthService) getUserGroupsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, UserGroupsResponse{
-		Groups: groups,
-		Count:  len(groups),
-	})
-}
-
-// GetUserPermissionsHandler retrieves aggregated permissions for a user
-func (as *AuthService) getUserPermissionsHandler(c *gin.Context) {
-	userID := c.Param("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error:   "invalid_request",
-			Message: "User ID is required",
-		})
-		return
-	}
-
-	// Check cache first
-	permissions, groups, err := as.getUserPermissionsCache(userID)
-	if err != nil {
-		as.logger.Errorf("Failed to get permissions cache: %v", err)
-	}
-
-	// If no cache or cache miss, get fresh data
-	if permissions == nil || groups == nil {
-		permissions, err = as.getUserPermissions(userID)
-		if err != nil {
-			as.logger.Errorf("Failed to get user permissions: %v", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to retrieve user permissions",
-			})
-			return
-		}
-
-		groups, err = as.getUserGroups(userID)
-		if err != nil {
-			as.logger.Errorf("Failed to get user groups: %v", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{
-				Error:   "internal_error",
-				Message: "Failed to retrieve user groups",
-			})
-			return
-		}
-
-		// Cache the results
-		if err := as.setUserPermissionsCache(userID, permissions, groups); err != nil {
-			as.logger.Warnf("Failed to cache permissions: %v", err)
-		}
-	}
-
-	c.JSON(http.StatusOK, UserPermissionsResponse{
-		Permissions: permissions,
-		Groups:      groups,
+	c.JSON(http.StatusOK, gin.H{
+		"user_groups": groups,
+		"count":       len(groups),
 	})
 }
 

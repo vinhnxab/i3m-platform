@@ -7,6 +7,8 @@ interface RootState {
       userRoles?: string[];
       tenantId?: string;
     } | null;
+    isAuthenticated: boolean;
+    userGroups: any[] | null;
   };
 }
 
@@ -206,10 +208,22 @@ export const FEATURE_PERMISSIONS = {
 export const usePermissions = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const userGroups = useSelector((state: RootState) => state.auth.userGroups);
 
   const hasPermission = (feature: keyof typeof FEATURE_PERMISSIONS): boolean => {
     if (!isAuthenticated || !user) return false;
     
+    // Check userGroups first (new logic)
+    if (userGroups && userGroups.length > 0) {
+      // Check each group for permissions
+      for (const group of userGroups) {
+        if (group.permissions && group.permissions[feature]) {
+          return true;
+        }
+      }
+    }
+    
+    // Fallback to role-based permission
     const permission = FEATURE_PERMISSIONS[feature][user.role as keyof typeof FEATURE_PERMISSIONS[typeof feature]];
     return permission !== PERMISSION_LEVELS.NONE;
   };
@@ -248,14 +262,37 @@ export const usePermissions = () => {
 export const useRole = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const userGroups = useSelector((state: RootState) => state.auth.userGroups);
 
   const hasRole = (role: string): boolean => {
     if (!isAuthenticated || !user) return false;
+    
+    // Check userGroups first (new logic)
+    if (userGroups && userGroups.length > 0) {
+      return userGroups.some(group => 
+        group.role.toLowerCase().includes(role.toLowerCase()) ||
+        role.toLowerCase().includes(group.role.toLowerCase())
+      );
+    }
+    
+    // Fallback to old role check
     return user.role === role;
   };
 
   const hasAnyRole = (roles: string[]): boolean => {
     if (!isAuthenticated || !user) return false;
+    
+    // Check userGroups first (new logic)
+    if (userGroups && userGroups.length > 0) {
+      return userGroups.some(group => 
+        roles.some(role => 
+          group.role.toLowerCase().includes(role.toLowerCase()) ||
+          role.toLowerCase().includes(group.role.toLowerCase())
+        )
+      );
+    }
+    
+    // Fallback to old role check
     return roles.includes(user.role);
   };
 

@@ -18,6 +18,7 @@ type User struct {
 	FirstName    *string    `json:"first_name" db:"first_name"`
 	LastName     *string    `json:"last_name" db:"last_name"`
 	Role         string     `json:"role" db:"role"`
+	PrimaryRole  *string    `json:"primary_role" db:"primary_role"` // ← Thêm primary role
 	Status       string     `json:"status" db:"status"`
 	Preferences  JSONB      `json:"preferences" db:"preferences"`
 	LastLoginAt  *time.Time `json:"last_login_at" db:"last_login_at"`
@@ -65,11 +66,13 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int64  `json:"expires_in"`
-	User         User   `json:"user"`
+	AccessToken  string     `json:"access_token"`
+	RefreshToken string     `json:"refresh_token"`
+	TokenType    string     `json:"token_type"`
+	ExpiresIn    int64      `json:"expires_in"`
+	User         User       `json:"user"`
+	TenantToken  *string    `json:"tenant_token,omitempty"`
+	PrimaryGroup *UserGroup `json:"primary_group,omitempty"`
 }
 
 type RegisterRequest struct {
@@ -214,21 +217,24 @@ type UserGroup struct {
 	Permissions map[string]interface{} `json:"permissions" db:"permissions"`
 	Priority    int                    `json:"priority" db:"priority"`
 	Role        string                 `json:"role" db:"role"`
+	IsPrimary   bool                   `json:"is_primary" db:"is_primary"` // ← Thêm primary flag
 	AssignedAt  time.Time              `json:"assigned_at" db:"assigned_at"`
 	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time              `json:"updated_at" db:"updated_at"`
+	GroupName   string                 `json:"group_name" db:"group_name"` // Add this field
 }
 
 // UserGroupMembership model
 type UserGroupMembership struct {
-	ID         string     `json:"id" db:"id"`
-	UserID     string     `json:"user_id" db:"user_id"`
-	GroupID    string     `json:"group_id" db:"group_id"`
-	Role       string     `json:"role" db:"role"`
-	AssignedBy string     `json:"assigned_by" db:"assigned_by"`
-	AssignedAt time.Time  `json:"assigned_at" db:"assigned_at"`
-	IsActive   bool       `json:"is_active" db:"is_active"`
-	ExpiresAt  *time.Time `json:"expires_at" db:"expires_at"`
+	ID            string     `json:"id" db:"id"`
+	UserID        string     `json:"user_id" db:"user_id"`
+	GroupID       string     `json:"group_id" db:"group_id"`
+	Role          string     `json:"role" db:"role"`
+	IsPrimaryRole bool       `json:"is_primary_role" db:"is_primary_role"` // ← Thêm primary role flag
+	AssignedBy    string     `json:"assigned_by" db:"assigned_by"`
+	AssignedAt    time.Time  `json:"assigned_at" db:"assigned_at"`
+	IsActive      bool       `json:"is_active" db:"is_active"`
+	ExpiresAt     *time.Time `json:"expires_at" db:"expires_at"`
 }
 
 // Group assignment request

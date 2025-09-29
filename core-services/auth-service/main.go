@@ -172,7 +172,6 @@ func (as *AuthService) setupRouter() {
 		{
 			// User group management routes
 			groups.GET("/users/:user_id", as.getUserGroupsHandler)
-			groups.GET("/users/:user_id/permissions", as.getUserPermissionsHandler)
 			groups.POST("/assign", as.assignUserToGroupHandler)
 			groups.DELETE("/remove", as.removeUserFromGroupHandler)
 
@@ -184,6 +183,26 @@ func (as *AuthService) setupRouter() {
 			groups.GET("/", as.listGroupsHandler)
 		}
 		as.logger.Info("✅ Groups routes setup completed")
+
+		// Primary group management routes
+		as.logger.Info("🚀 Setting up primary group routes...")
+		primaryGroup := v1.Group("/primary-group")
+		primaryGroup.Use(as.authMiddleware())
+		{
+			primaryGroup.POST("/set", as.setPrimaryGroupHandler)
+			primaryGroup.GET("/users/:user_id", as.getPrimaryGroupHandler)
+		}
+		as.logger.Info("✅ Primary group routes setup completed")
+
+		// Primary role management routes
+		as.logger.Info("🚀 Setting up primary role routes...")
+		primaryRole := v1.Group("/primary-role")
+		primaryRole.Use(as.authMiddleware())
+		{
+			primaryRole.POST("/set", as.setPrimaryRoleHandler)
+			primaryRole.GET("/users/:user_id", as.getPrimaryRoleHandler)
+		}
+		as.logger.Info("✅ Primary role routes setup completed")
 	}
 }
 

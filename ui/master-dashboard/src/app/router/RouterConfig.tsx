@@ -25,6 +25,7 @@ import {
   EcommerceManagement,
   LiveChat
 } from '@/pages';
+import DashboardTest from '@/pages/DashboardTest';
 import UserManagement  from '@/pages/UserManagement';
 import DashboardWrapper from '@/components/DashboardWrapper';
 import NotFound from '@/pages/NotFound';
@@ -86,6 +87,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Overview />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'dashboard-test',
+        element: (
+          <ProtectedRoute>
+            <DashboardTest />
           </ProtectedRoute>
         ),
       },

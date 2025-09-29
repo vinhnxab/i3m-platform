@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I3M Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>I3M Login Implementation Test</h1>
+    
+    <div class="test-section">
+        <h2>🔍 Login Implementation Status</h2>
+        <p><strong>✅ Login form implemented</strong> - AuthFormWithTabs component</p>
+        <p><strong>✅ Redux integration</strong> - Redux Toolkit with authSlice</p>
+        <p><strong>✅ Error handling</strong> - Comprehensive error states</p>
+        <p><strong>✅ CSS fixes applied</strong> - Error messages now use white text</p>
+        <p><strong>✅ Mock mode enabled</strong> - For testing without backend</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🎨 CSS Error Message Fix</h2>
+        <p><strong>Before:</strong> <code>text-red-200</code> (hard to read on blue background)</p>
+        <p><strong>After:</strong> <code>text-white font-medium</code> (high contrast, readable)</p>
+        <div style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%); padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); padding: 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+                <span style="color: white;">⚠️</span>
+                <span style="color: white; font-weight: 500;">This is how error messages look now - much better visibility!</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Cases</h2>
+        <p>You can test these scenarios in the login form:</p>
+        <ul>
+            <li><strong>Network Error:</strong> Use email <code>error@test.com</code></li>
+            <li><strong>Invalid Credentials:</strong> Use email <code>wrong@test.com</code> or password <code>wrongpassword</code></li>
+            <li><strong>Successful Login:</strong> Use <code>admin@i3m.com</code> / <code>admin123</code></li>
+            <li><strong>Empty Fields:</strong> Leave email/password empty</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Implementation Details</h2>
+        <h3>Redux Toolkit Setup:</h3>
+        <ul>
+            <li>✅ <code>authSlice</code> with async thunks</li>
+            <li>✅ <code>loginUser</code>, <code>registerUser</code> actions</li>
+            <li>✅ Error handling with <code>rejectWithValue</code></li>
+            <li>✅ LocalStorage integration</li>
+            <li>✅ Token management (access + refresh)</li>
+        </ul>
+
+        <h3>Component Architecture:</h3>
+        <ul>
+            <li>✅ <code>AuthFormWithTabs</code> - Main login component</li>
+            <li>✅ <code>AuthLayout</code> - Full-screen layout with glass effect</li>
+            <li>✅ <code>I3MLogo</code> - Animated logo component</li>
+            <li>✅ <code>LanguageSwitcher</code> - Multi-language support</li>
+        </ul>
+
+        <h3>Error Handling:</h3>
+        <ul>
+            <li>✅ Network errors</li>
+            <li>✅ Invalid credentials</li>
+            <li>✅ Validation errors</li>
+            <li>✅ Server errors</li>
+            <li>✅ Loading states</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Next Steps</h2>
+        <p>To complete the login implementation:</p>
+        <ol>
+            <li>Start the authentication service (port 3008)</li>
+            <li>Configure real API endpoints</li>
+            <li>Test with real user credentials</li>
+            <li>Implement password reset functionality</li>
+            <li>Add social login options</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>📱 Access the Login Page</h2>
+        <p><strong>URL:</strong> <a href="http://localhost:3000/login" target="_blank">http://localhost:3000/login</a></p>
+        <p><strong>Features to test:</strong></p>
+        <ul>
+            <li>Tab switching between Login/Signup</li>
+            <li>Form validation</li>
+            <li>Error message display (now with white text)</li>
+            <li>Loading states</li>
+            <li>Password visibility toggle</li>
+            <li>Remember me checkbox</li>
+        </ul>
+    </div>
+</body>
+</html>

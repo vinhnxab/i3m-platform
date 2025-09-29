@@ -1,8 +1,8 @@
 import React from 'react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { PermissionGuard, PlatformGuard, TenantGuard, DeveloperGuard, CustomerGuard } from '@/components/auth/PermissionGuard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { usePermissions } from '../hooks/usePermissions';
+import { PermissionGuard, MarketplaceDeveloperGuard, TenantGuard, DeveloperGuard, CustomerGuard } from './auth/PermissionGuard';
+import { Card, CardContent, CardHeader, CardTitle } from '../shared/components/ui/card';
+import { Badge } from '../shared/components/ui/badge';
 import { UserManagementForm, SystemSettingsForm, CustomerForm } from './PermissionForms';
 import { UserManagementTable, CustomerManagementTable, APIManagementTable, TenantManagementTable } from './PermissionTables';
 
@@ -77,12 +77,12 @@ export const PermissionTest: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <PlatformGuard>
+            <MarketplaceDeveloperGuard>
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <h3 className="font-semibold text-blue-900">Platform Content</h3>
                 <p className="text-blue-700">This content is only visible to Platform users.</p>
               </div>
-            </PlatformGuard>
+            </MarketplaceDeveloperGuard>
 
             <TenantGuard>
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">

@@ -1,6 +1,6 @@
 import React from 'react';
-import { usePermissions, useRole } from '@/hooks/usePermissions';
-import { PERMISSION_LEVELS } from '@/hooks/usePermissions';
+import { usePermissions, useRole } from '../../hooks/usePermissions';
+import { PERMISSION_LEVELS } from '../../hooks/usePermissions';
 
 interface PermissionGuardProps {
   feature: string;
@@ -99,14 +99,14 @@ export const RoleGuard: React.FC<{
   return <>{children}</>;
 };
 
-// Component for platform-specific content
-export const PlatformGuard: React.FC<{
+// Component for marketplace developer-specific content
+export const MarketplaceDeveloperGuard: React.FC<{
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }> = ({ children, fallback = null }) => {
-  const { isPlatformRole } = useRole();
+  const { isDeveloper } = useRole();
   
-  if (!isPlatformRole()) {
+  if (!isDeveloper()) {
     return <>{fallback}</>;
   }
 

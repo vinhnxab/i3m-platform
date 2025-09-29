@@ -26,14 +26,10 @@ export default function AuthFormWithTabs() {
   const error = useSelector((state: any) => state.auth.error);
   const { t } = useLanguage();
 
-  // Auto-switch tab based on URL
+  // Force login tab only (no register)
   useEffect(() => {
-    if (location.pathname === '/register') {
-      setActiveTab('signup');
-    } else if (location.pathname === '/login') {
-      setActiveTab('login');
-    }
-  }, [location.pathname]);
+    setActiveTab('login');
+  }, []);
   
   const [signInData, setSignInData] = useState({
     email: "",
@@ -104,19 +100,9 @@ export default function AuthFormWithTabs() {
           return;
         }
         
-        // Always redirect to primary role dashboard using paths
-        console.log('🔍 AuthFormWithTabs - Redirecting to primary role dashboard');
-        if (user.role === 'MARKETPLACE_DEVELOPER') {
-          navigate('/developer/dashboard');
-        } else if (user.role.startsWith('TENANT_')) {
-          navigate('/tenant/dashboard');
-        } else if (user.role.startsWith('PLATFORM_')) {
-          navigate('/dashboard');
-        } else if (user.role === 'END_CUSTOMER') {
-          navigate('/customer/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
+        // Redirect to dashboard test page to show localStorage data
+        console.log('🔍 AuthFormWithTabs - Redirecting to dashboard test');
+        navigate('/dashboard-test');
       } else {
         console.log('❌ Login failed:', result);
       }
@@ -174,8 +160,8 @@ export default function AuthFormWithTabs() {
         {/* Error Display */}
         {error && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-md flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 text-red-400" />
-            <span className="text-red-200 text-base">{error}</span>
+            <AlertCircle className="w-4 h-4 text-white" />
+            <span className="text-white text-base font-medium">{error}</span>
           </div>
         )}
 
@@ -190,41 +176,11 @@ export default function AuthFormWithTabs() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Custom Tabs with Enhanced Slide Animation */}
-            <div className="tabs-container">
-              <div className={`tab-slider ${activeTab === 'signup' ? 'signup' : ''} ${isSwitching ? 'switching' : ''}`}></div>
-                  <button
-                    className={`tab-trigger ${activeTab === 'login' ? 'active' : ''}`}
-                    onClick={() => {
-                      if (activeTab !== 'login') {
-                        setIsSwitching(true);
-                        setTimeout(() => {
-                          setActiveTab('login');
-                          clearError();
-                          navigate('/login');
-                          setIsSwitching(false);
-                        }, 100);
-                      }
-                    }}
-                >
-                  {t('auth.signIn')}
-                  </button>
-                  <button
-                    className={`tab-trigger ${activeTab === 'signup' ? 'active' : ''}`}
-                    onClick={() => {
-                      if (activeTab !== 'signup') {
-                        setIsSwitching(true);
-                        setTimeout(() => {
-                          setActiveTab('signup');
-                          clearError();
-                          navigate('/register');
-                          setIsSwitching(false);
-                        }, 100);
-                      }
-                    }}
-                >
-                  {t('auth.signUp')}
-                  </button>
+            {/* Login Only - No Tabs */}
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold text-white">
+                {t('auth.signIn')}
+              </h3>
             </div>
 
             {activeTab === 'login' && (
@@ -336,156 +292,6 @@ export default function AuthFormWithTabs() {
               </div>
             )}
 
-            {activeTab === 'signup' && (
-              <div className="space-y-4 mt-6 tab-content">
-                <form
-                  onSubmit={handleSignUp}
-                  className="space-y-4"
-                >
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="fullName"
-                      className="text-white"
-                    >
-                      {t('auth.fullName')}
-                    </Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder={t('auth.fullNamePlaceholder')}
-                      value={signUpData.fullName}
-                      onChange={(e) =>
-                        setSignUpData({
-                          ...signUpData,
-                          fullName: e.target.value,
-                        })
-                      }
-                      className="bg-white/10 border-white/30 text-white placeholder-light focus:border-blue-400 focus:ring-blue-400"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signUpEmail"
-                      className="text-white"
-                    >
-                      {t('auth.email')}
-                    </Label>
-                    <Input
-                      id="signUpEmail"
-                      type="email"
-                      placeholder={t('auth.emailPlaceholder')}
-                      value={signUpData.email}
-                      onChange={(e) =>
-                        setSignUpData({
-                          ...signUpData,
-                          email: e.target.value,
-                        })
-                      }
-                      className="bg-white/10 border-white/30 text-white placeholder-light focus:border-blue-400 focus:ring-blue-400"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="signUpPassword"
-                      className="text-white"
-                    >
-                      {t('auth.password')}
-                    </Label>
-                    <div className="relative">
-                    <Input
-                      id="signUpPassword"
-                        type={showPassword ? "text" : "password"}
-                      placeholder={t('auth.passwordPlaceholder')}
-                      value={signUpData.password}
-                      onChange={(e) =>
-                        setSignUpData({
-                          ...signUpData,
-                          password: e.target.value,
-                        })
-                      }
-                        className="bg-white/10 border-white/30 text-white placeholder-light focus:border-blue-400 focus:ring-blue-400 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white hover:text-white transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="confirmPassword"
-                      className="text-white"
-                    >
-                      {t('auth.confirmPassword')}
-                    </Label>
-                    <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                      placeholder={t('auth.confirmPasswordPlaceholder')}
-                      value={signUpData.confirmPassword}
-                      onChange={(e) =>
-                        setSignUpData({
-                          ...signUpData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                        className="bg-white/10 border-white/30 text-white placeholder-light focus:border-blue-400 focus:ring-blue-400 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white hover:text-white transition-colors"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* Terms Agreement Checkbox */}
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="agreeToTerms"
-                      checked={agreeToTerms}
-                      onCheckedChange={(checked: boolean) => setAgreeToTerms(checked)}
-                      className="border-white/30 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                    />
-                    <Label
-                      htmlFor="agreeToTerms"
-                      className="text-base text-white cursor-pointer"
-                    >
-                      {t('auth.agreeToTerms')}
-                    </Label>
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    disabled={!agreeToTerms || isLoading}
-                    className="w-full submit-button disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t('auth.creatingAccount')}
-                      </>
-                    ) : (
-                      t('auth.createAccount')
-                    )}
-                  </Button>
-                </form>
-              </div>
-            )}
           </CardContent>
         </Card>
 

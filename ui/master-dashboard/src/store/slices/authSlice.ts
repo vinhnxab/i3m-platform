@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { User, LoginCredentials, RegisterData } from '@/types/auth';
-import { authService } from '@/services/authService';
+import { User, LoginCredentials, RegisterData } from '../../types/auth';
+import { authService } from '../../services/authService';
 
 // Auth state interface
 interface AuthState {
@@ -10,6 +10,9 @@ interface AuthState {
   error: string | null;
   token: string | null;
   refreshToken: string | null;
+  userGroups: any[] | null;
+  primaryGroup: any | null; // ← Thêm primary group
+  primaryRole: string | null; // ← Thêm primary role
 }
 
 // Initial state
@@ -20,6 +23,9 @@ const initialState: AuthState = {
   error: null,
   token: null,
   refreshToken: null,
+  userGroups: null,
+  primaryGroup: null, // ← Thêm primary group
+  primaryRole: null, // ← Thêm primary role
 };
 
 // Async thunks
@@ -31,8 +37,8 @@ export const loginUser = createAsyncThunk(
       if (response.success && response.user) {
         return {
           user: response.user,
-          token: response.token,
-          refreshToken: response.refreshToken
+          token: response.token || '',
+          refreshToken: response.refreshToken || ''
         };
       } else {
         return rejectWithValue(response.error || 'Login failed');
@@ -56,11 +62,17 @@ export const registerUser = createAsyncThunk(
         last_name: data.name.split(' ').slice(1).join(' ') || ''
       });
       if (response.success && response.user) {
-        return {
-          user: response.user,
-          token: response.token,
-          refreshToken: response.refreshToken
-        };
+        // For registration, we need to login after successful registration
+        const loginResponse = await authService.login(data.email, data.password);
+        if (loginResponse.success && loginResponse.user) {
+          return {
+            user: loginResponse.user,
+            token: loginResponse.token || '',
+            refreshToken: loginResponse.refreshToken || ''
+          };
+        } else {
+          return rejectWithValue('Registration successful but login failed');
+        }
       } else {
         return rejectWithValue(response.error || 'Registration failed');
       }
@@ -85,6 +97,52 @@ export const verifyToken = createAsyncThunk(
     }
   }
 );
+
+// Fetch user groups
+export const fetchUserGroups = createAsyncThunk(
+  'auth/fetchUserGroups',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await authService.getUserGroups(userId);
+      return response.user_groups || [];
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch user groups'
+      );
+    }
+  }
+);
+
+// Set primary role
+export const setPrimaryRole = createAsyncThunk(
+  'auth/setPrimaryRole',
+  async ({ userId, primaryRole }: { userId: string; primaryRole: string }, { rejectWithValue }) => {
+    try {
+      const response = await authService.setPrimaryRole(userId, primaryRole);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to set primary role'
+      );
+    }
+  }
+);
+
+// Fetch primary role
+export const fetchPrimaryRole = createAsyncThunk(
+  'auth/fetchPrimaryRole',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await authService.getPrimaryRole(userId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : 'Failed to fetch primary role'
+      );
+    }
+  }
+);
+
 
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
@@ -166,20 +224,20 @@ const authSlice = createSlice({
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
-        // Update localStorage
-        localStorage.setItem('user_data', JSON.stringify(state.user));
+        // Update localStorage with new key
+        localStorage.setItem('userData', JSON.stringify(state.user));
       }
     },
-    setCredentials: (state, action: PayloadAction<{ token: string; refreshToken: string; user: User }>) => {
+    setCredentials: (state, action: PayloadAction<{ token: string; refreshToken: string; user: any }>) => {
       state.token = action.payload.token;
       state.refreshToken = action.payload.refreshToken;
-      state.user = action.payload.user;
+      state.user = action.payload.user as User;
       state.isAuthenticated = true;
       state.error = null;
       
       // Store in localStorage
       authService.setTokens(action.payload.token, action.payload.refreshToken);
-      localStorage.setItem('user_data', JSON.stringify(action.payload.user));
+      localStorage.setItem('userData', JSON.stringify(action.payload.user));
     },
     clearCredentials: (state) => {
       state.token = null;
@@ -187,14 +245,21 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.userGroups = null;
       
       // Clear localStorage
       authService.clearTokens();
     },
+    setUserGroups: (state, action: PayloadAction<any[]>) => {
+      state.userGroups = action.payload;
+    },
+    setPrimaryRoleState: (state, action: PayloadAction<string>) => {
+      state.primaryRole = action.payload;
+    },
     initializeAuth: (state) => {
       const token = authService.getToken();
       const refreshToken = authService.getRefreshToken();
-      const userData = localStorage.getItem('user_data');
+      const userData = localStorage.getItem('userData');
       
       if (token && refreshToken && userData) {
         try {
@@ -219,7 +284,7 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = action.payload.user as User;
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
@@ -227,7 +292,7 @@ const authSlice = createSlice({
         
         // Store in localStorage
         authService.setTokens(action.payload.token, action.payload.refreshToken);
-        localStorage.setItem('user_data', JSON.stringify(action.payload.user));
+        localStorage.setItem('userData', JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -243,7 +308,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = action.payload.user as User;
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
@@ -251,7 +316,7 @@ const authSlice = createSlice({
         
         // Store in localStorage
         authService.setTokens(action.payload.token, action.payload.refreshToken);
-        localStorage.setItem('user_data', JSON.stringify(action.payload.user));
+        localStorage.setItem('userData', JSON.stringify(action.payload.user));
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -266,7 +331,7 @@ const authSlice = createSlice({
       })
       .addCase(verifyToken.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
+        state.user = action.payload as User;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -287,12 +352,14 @@ const authSlice = createSlice({
       })
       .addCase(refreshToken.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.token = action.payload.token;
-        state.refreshToken = action.payload.refreshToken;
+        state.token = action.payload.token || null;
+        state.refreshToken = action.payload.refreshToken || null;
         state.error = null;
         
         // Update localStorage
-        authService.setTokens(action.payload.token, action.payload.refreshToken);
+        if (action.payload.token && action.payload.refreshToken) {
+          authService.setTokens(action.payload.token, action.payload.refreshToken);
+        }
       })
       .addCase(refreshToken.rejected, (state, action) => {
         state.isLoading = false;
@@ -363,6 +430,52 @@ const authSlice = createSlice({
         // Clear localStorage
         authService.clearTokens();
       });
+
+    // Fetch User Groups
+    builder
+      .addCase(fetchUserGroups.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchUserGroups.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.userGroups = action.payload;
+        state.error = null;
+      })
+      .addCase(fetchUserGroups.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Set Primary Role
+    builder
+      .addCase(setPrimaryRole.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(setPrimaryRole.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.primaryRole = action.payload.primary_role;
+        state.error = null;
+      })
+      .addCase(setPrimaryRole.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch Primary Role
+    builder
+      .addCase(fetchPrimaryRole.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchPrimaryRole.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.primaryRole = action.payload.primary_role;
+        state.error = null;
+      })
+      .addCase(fetchPrimaryRole.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
   },
 });
 
@@ -372,6 +485,8 @@ export const {
   setCredentials,
   clearCredentials,
   initializeAuth,
+  setUserGroups,
+  setPrimaryRoleState,
 } = authSlice.actions;
 
 export default authSlice.reducer;

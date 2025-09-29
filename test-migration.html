@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test localStorage Migration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 localStorage Migration Test</h1>
+        
+        <div class="section">
+            <h2>Current localStorage Keys:</h2>
+            <div id="currentKeys" class="log"></div>
+        </div>
+        
+        <div class="section">
+            <h2>Actions:</h2>
+            <button onclick="showCurrentKeys()">🔄 Refresh Keys</button>
+            <button onclick="simulateOldData()">📝 Simulate Old Data</button>
+            <button onclick="runMigration()">🔧 Run Migration</button>
+            <button onclick="forceCleanup()">🧹 Force Cleanup</button>
+            <button onclick="clearAll()">🗑️ Clear All</button>
+        </div>
+        
+        <div class="section">
+            <h2>Console Logs:</h2>
+            <div id="consoleLogs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logContainer = document.getElementById('consoleLogs');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        function showCurrentKeys() {
+            const keys = Object.keys(localStorage);
+            const keyList = keys.map(key => {
+                const value = localStorage.getItem(key);
+                let displayValue = value;
+                if (value.length > 100) {
+                    displayValue = value.substring(0, 100) + '...';
+                }
+                return `${key}: ${displayValue}`;
+            }).join('\n');
+            
+            document.getElementById('currentKeys').textContent = 
+                keys.length > 0 ? keyList : 'No keys found';
+        }
+        
+        function simulateOldData() {
+            console.log('📝 Simulating old localStorage data...');
+            
+            // Add old keys
+            localStorage.setItem('i3m-language', 'en');
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'test-user-id',
+                email: 'test@example.com',
+                name: 'Test User',
+                platformRoles: [
+                    { groupId: 'group1', groupName: 'Test Group', role: 'member' }
+                ]
+            }));
+            localStorage.setItem('authRefreshToken', 'old-refresh-token');
+            localStorage.setItem('authUser', 'old-auth-user');
+            
+            console.log('✅ Old data simulated');
+            showCurrentKeys();
+        }
+        
+        function runMigration() {
+            console.log('🔧 Running migration...');
+            
+            // Migrate i3m-language to language
+            const oldLanguage = localStorage.getItem('i3m-language');
+            if (oldLanguage) {
+                localStorage.setItem('language', oldLanguage);
+                localStorage.removeItem('i3m-language');
+                console.log('🔧 Migrated i3m-language to language:', oldLanguage);
+            }
+            
+            // Migrate user_data to userData
+            const oldUserData = localStorage.getItem('user_data');
+            const currentUserData = localStorage.getItem('userData');
+            
+            if (oldUserData && !currentUserData) {
+                try {
+                    const parsedUserData = JSON.parse(oldUserData);
+                    if (parsedUserData.platformRoles) {
+                        parsedUserData.userGroups = parsedUserData.platformRoles;
+                        delete parsedUserData.platformRoles;
+                    }
+                    localStorage.setItem('userData', JSON.stringify(parsedUserData));
+                    console.log('🔧 Migrated user_data to userData');
+                } catch (error) {
+                    console.error('Error migrating user_data:', error);
+                }
+            }
+            
+            // Remove old user_data key
+            if (localStorage.getItem('user_data')) {
+                localStorage.removeItem('user_data');
+                console.log('🗑️ Removed old user_data key');
+            }
+            
+            // Clean up other old keys
+            const oldKeys = ['authRefreshToken', 'authUser', 'user'];
+            oldKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    console.log('🔧 Removed old key:', key);
+                }
+            });
+            
+            console.log('✅ Migration completed');
+            showCurrentKeys();
+        }
+        
+        function forceCleanup() {
+            console.log('🧹 Force cleaning up old localStorage keys...');
+            
+            const oldKeys = [
+                'user_data', 
+                'i3m-language', 
+                'authRefreshToken', 
+                'authUser', 
+                'user',
+                'token'
+            ];
+            
+            oldKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    console.log('🗑️ Removed old key:', key);
+                }
+            });
+            
+            console.log('✅ Force cleanup completed');
+            showCurrentKeys();
+        }
+        
+        function clearAll() {
+            console.log('🗑️ Clearing all localStorage...');
+            localStorage.clear();
+            console.log('✅ All localStorage cleared');
+            showCurrentKeys();
+        }
+        
+        // Initialize
+        showCurrentKeys();
+    </script>
+</body>
+</html>

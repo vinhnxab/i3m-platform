@@ -2,8 +2,8 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Loader2 } from 'lucide-react';
-import { usePermissions } from '@/hooks/usePermissions';
-import { authService } from '@/services/authService';
+import { usePermissions, useRole } from '../../hooks/usePermissions';
+import { authService } from '../../services/authService';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -24,14 +24,23 @@ interface RootState {
       role: string;
       department: string;
       tenantId?: string;
+      userGroups?: {
+        groupId: string;
+        groupName: string;
+        role: string;
+        permissions: Record<string, any>;
+        assignedAt: string;
+      }[];
       tenant?: {
         id: string;
         name: string;
         subdomain: string;
       };
-    };
+    } | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    error: string | null;
+    userGroups: any[] | null;
   };
 }
 
@@ -45,8 +54,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const user = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
   const isLoading = useSelector((state: RootState) => state.auth.isLoading);
+  const userGroups = useSelector((state: RootState) => state.auth.userGroups);
   const location = useLocation();
-  const { canAccess, canAccessFull, canAccessLimited, hasAnyRole } = usePermissions();
+  const { canAccess, canAccessFull, canAccessLimited } = usePermissions();
+  const { hasAnyRole } = useRole();
   
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -150,7 +161,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Check role-based access
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-    if (!hasAnyRole(roles)) {
+    
+    // New logic: Check userGroups first, then fallback to hasAnyRole
+    let hasAccess = false;
+    if (userGroups && userGroups.length > 0) {
+      hasAccess = userGroups.some(group => 
+        roles.some(role => 
+          group.role.toLowerCase().includes(role.toLowerCase()) ||
+          role.toLowerCase().includes(group.role.toLowerCase())
+        )
+      );
+    } else {
+      hasAccess = hasAnyRole(roles);
+    }
+    
+    if (!hasAccess) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center space-y-4">

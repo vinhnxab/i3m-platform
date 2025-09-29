@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-dashboard-dev-service
+  namespace: i3m-platform
+  labels:
+    app: ui-dashboard-dev
+    component: frontend
+    environment: development
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5173
+    targetPort: 5173
+    protocol: TCP
+    name: dev-server
+  selector:
+    app: ui-dashboard-dev

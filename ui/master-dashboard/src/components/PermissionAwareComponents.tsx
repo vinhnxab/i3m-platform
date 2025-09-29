@@ -1,10 +1,13 @@
 import React from 'react';
-import { usePermissions, useRole } from '@/hooks/usePermissions';
-import { PermissionGuard, PlatformGuard, TenantGuard, DeveloperGuard, CustomerGuard } from '@/components/auth/PermissionGuard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
+import { usePermissions, useRole } from '../hooks/usePermissions';
+import { PermissionGuard, MarketplaceDeveloperGuard, TenantGuard, DeveloperGuard, CustomerGuard } from './auth/PermissionGuard';
+import { Card, CardContent, CardHeader, CardTitle } from '../shared/components/ui/card';
+import { Button } from '../shared/components/ui/button';
+import { Badge } from '../shared/components/ui/badge';
 // Icons are imported as needed in individual components
+
+// Re-export PermissionGuard for use in other components
+export { PermissionGuard };
 
 // Permission-aware feature cards
 export const FeatureCard: React.FC<{
@@ -209,7 +212,7 @@ export const RoleBasedContent: React.FC<{
   const { isPlatformRole, isTenantRole, isDeveloper, isEndCustomer } = useRole();
   
   if (isPlatformRole()) {
-    return <PlatformGuard fallback={fallback}>{children}</PlatformGuard>;
+    return <MarketplaceDeveloperGuard fallback={fallback}>{children}</MarketplaceDeveloperGuard>;
   }
   
   if (isTenantRole()) {
@@ -309,8 +312,8 @@ export const PermissionFormField: React.FC<{
   );
 };
 
-// Permission-aware table columns
-export const PermissionTableColumn: React.FC<{
+// Permission-aware table header columns
+export const PermissionTableHeader: React.FC<{
   feature: string;
   children: React.ReactNode;
   requireFullAccess?: boolean;
@@ -328,7 +331,31 @@ export const PermissionTableColumn: React.FC<{
       requireLimitedAccess={requireLimitedAccess}
       fallback={<th className="opacity-50">{children}</th>}
     >
-      <th>{children}</th>
+      {children}
+    </PermissionGuard>
+  );
+};
+
+// Permission-aware table body columns
+export const PermissionTableColumn: React.FC<{
+  feature: string;
+  children: React.ReactNode;
+  requireFullAccess?: boolean;
+  requireLimitedAccess?: boolean;
+}> = ({ 
+  feature, 
+  children, 
+  requireFullAccess = false,
+  requireLimitedAccess = false 
+}) => {
+  return (
+    <PermissionGuard 
+      feature={feature}
+      requireFullAccess={requireFullAccess}
+      requireLimitedAccess={requireLimitedAccess}
+      fallback={<td className="opacity-50">{children}</td>}
+    >
+      {children}
     </PermissionGuard>
   );
 };

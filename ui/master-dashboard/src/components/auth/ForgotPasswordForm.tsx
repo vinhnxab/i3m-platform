@@ -111,7 +111,7 @@ export default function ForgotPasswordForm() {
       {/* Error Display */}
       {error && (
         <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-md flex items-center space-x-2">
-          <span className="text-red-200 text-base">{error}</span>
+          <span className="text-white text-base font-medium">{error}</span>
         </div>
       )}
 

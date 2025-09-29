@@ -1,6 +1,6 @@
 export const API_CONFIG = {
   // Base URL for API Gateway
-  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://i3m.local:3004/api',
+  BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3004/api',
 
   // Individual service URLs (for direct access if needed)
   AUTH_SERVICE_URL: import.meta.env.VITE_AUTH_SERVICE_URL || 'http://i3m.local:3002',

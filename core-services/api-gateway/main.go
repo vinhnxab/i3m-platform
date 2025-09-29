@@ -142,6 +142,15 @@ func (gw *APIGateway) setupRouter() {
 			auth.POST("/logout", gw.authMiddleware(), gw.proxyToAuthService)
 			auth.POST("/refresh", gw.rateLimitMiddleware(), gw.proxyToAuthService)
 			auth.GET("/profile", gw.authMiddleware(), gw.proxyToAuthService)
+
+			// Multi-group management routes - public for testing
+			auth.Any("/groups/*path", gw.proxyToAuthService)
+
+			// Primary group management routes
+			auth.Any("/primary-group/*path", gw.proxyToAuthService)
+
+			// Primary role management routes
+			auth.Any("/primary-role/*path", gw.proxyToAuthService)
 		}
 
 		// User routes (proxy to user service)

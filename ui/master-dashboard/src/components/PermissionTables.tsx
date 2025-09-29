@@ -1,32 +1,29 @@
 import React from 'react';
-import { PermissionTableColumn, PermissionButton } from './PermissionAwareComponents';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
-import { Button } from '@/shared/components/ui/button';
+import { PermissionGuard } from './PermissionAwareComponents';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/shared/components/ui/table';
+  Card, 
+  Avatar, 
+  Badge, 
+  Button, 
+  Space, 
+  Tag, 
+  Typography,
+  Row,
+  Col
+} from 'antd';
 import { 
-  Users, 
-  Settings, 
-  Shield, 
-  Database, 
-  Globe, 
-  Building,
-  UserCheck,
-  Mail,
-  Phone,
-  MapPin,
-  Edit,
-  Trash2,
-  Eye,
-  MoreHorizontal
-} from 'lucide-react';
+  UserOutlined,
+  TeamOutlined,
+  GlobalOutlined,
+  BuildOutlined,
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SettingOutlined,
+  MoreOutlined
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 export const UserManagementTable: React.FC = () => {
   const users = [
@@ -37,85 +34,85 @@ export const UserManagementTable: React.FC = () => {
     { id: 5, name: 'Charlie Wilson', email: 'charlie@example.com', role: 'END_CUSTOMER', status: 'Active', tenant: 'N/A' },
   ];
 
-  const getRoleBadge = (role: string) => {
+  const getRoleTag = (role: string) => {
     const roleColors = {
-      'PLATFORM_ADMIN': 'bg-red-100 text-red-800',
-      'PLATFORM_USER': 'bg-blue-100 text-blue-800',
-      'TENANT_ADMIN': 'bg-green-100 text-green-800',
-      'TENANT_USER': 'bg-yellow-100 text-yellow-800',
-      'MARKETPLACE_DEVELOPER': 'bg-orange-100 text-orange-800',
-      'END_CUSTOMER': 'bg-purple-100 text-purple-800',
+      'PLATFORM_ADMIN': 'red',
+      'PLATFORM_USER': 'blue',
+      'TENANT_ADMIN': 'green',
+      'TENANT_USER': 'orange',
+      'MARKETPLACE_DEVELOPER': 'purple',
+      'END_CUSTOMER': 'cyan',
     };
     
     return (
-      <Badge className={roleColors[role as keyof typeof roleColors] || 'bg-gray-100 text-gray-800'}>
+      <Tag color={roleColors[role as keyof typeof roleColors] || 'default'}>
         {role.replace('_', ' ')}
-      </Badge>
+      </Tag>
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusTag = (status: string) => {
     return (
-      <Badge variant={status === 'Active' ? 'default' : 'secondary'}>
+      <Tag color={status === 'Active' ? 'green' : 'red'}>
         {status}
-      </Badge>
+      </Tag>
     );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Users className="w-5 h-5" />
+    <Card 
+      title={
+        <Space>
+          <TeamOutlined />
           <span>User Management</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <PermissionTableColumn feature="teams">
-                <TableHead>Role</TableHead>
-              </PermissionTableColumn>
-              <TableHead>Status</TableHead>
-              <PermissionTableColumn feature="tenants" requireFullAccess>
-                <TableHead>Tenant</TableHead>
-              </PermissionTableColumn>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <PermissionTableColumn feature="teams">
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                </PermissionTableColumn>
-                <TableCell>{getStatusBadge(user.status)}</TableCell>
-                <PermissionTableColumn feature="tenants" requireFullAccess>
-                  <TableCell>{user.tenant}</TableCell>
-                </PermissionTableColumn>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <PermissionButton feature="teams" variant="outline" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="teams" variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="teams" variant="outline" size="sm">
-                      <Trash2 className="w-4 h-4" />
-                    </PermissionButton>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+        </Space>
+      }
+    >
+      <Row gutter={[16, 16]}>
+        {users.map((user) => (
+          <Col key={user.id} span={24}>
+            <Card size="small" hoverable>
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Space>
+                    <Avatar icon={<UserOutlined />} />
+                    <div>
+                      <Title level={5} style={{ margin: 0 }}>{user.name}</Title>
+                      <Text type="secondary">{user.email}</Text>
+                    </div>
+                  </Space>
+                </Col>
+                
+                <Col>
+                  <Space>
+                    <PermissionGuard feature="teams">
+                      {getRoleTag(user.role)}
+                    </PermissionGuard>
+                    
+                    {getStatusTag(user.status)}
+                    
+                    <PermissionGuard feature="tenants" requireFullAccess>
+                      <Text type="secondary">{user.tenant}</Text>
+                    </PermissionGuard>
+                    
+                    <Space>
+                      <PermissionGuard feature="teams">
+                        <Button type="text" icon={<EyeOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="teams">
+                        <Button type="text" icon={<EditOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="teams">
+                        <Button type="text" icon={<DeleteOutlined />} size="small" danger />
+                      </PermissionGuard>
+                    </Space>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        ))}
+      </Row>
     </Card>
   );
 };
@@ -129,78 +126,79 @@ export const CustomerManagementTable: React.FC = () => {
     { id: 5, name: 'Local Shop', email: 'owner@localshop.com', tier: 'Basic', status: 'Active', revenue: '$2,000' },
   ];
 
-  const getTierBadge = (tier: string) => {
+  const getTierTag = (tier: string) => {
     const tierColors = {
-      'Basic': 'bg-gray-100 text-gray-800',
-      'Premium': 'bg-blue-100 text-blue-800',
-      'Enterprise': 'bg-purple-100 text-purple-800',
+      'Basic': 'default',
+      'Premium': 'blue',
+      'Enterprise': 'purple',
     };
     
     return (
-      <Badge className={tierColors[tier as keyof typeof tierColors] || 'bg-gray-100 text-gray-800'}>
+      <Tag color={tierColors[tier as keyof typeof tierColors] || 'default'}>
         {tier}
-      </Badge>
+      </Tag>
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusTag = (status: string) => {
     return (
-      <Badge variant={status === 'Active' ? 'default' : 'secondary'}>
+      <Tag color={status === 'Active' ? 'green' : 'red'}>
         {status}
-      </Badge>
+      </Tag>
     );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Users className="w-5 h-5" />
+    <Card 
+      title={
+        <Space>
+          <BuildOutlined />
           <span>Customer Management</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Tier</TableHead>
-              <TableHead>Status</TableHead>
-              <PermissionTableColumn feature="analytics">
-                <TableHead>Revenue</TableHead>
-              </PermissionTableColumn>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {customers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell className="font-medium">{customer.name}</TableCell>
-                <TableCell>{customer.email}</TableCell>
-                <TableCell>{getTierBadge(customer.tier)}</TableCell>
-                <TableCell>{getStatusBadge(customer.status)}</TableCell>
-                <PermissionTableColumn feature="analytics">
-                  <TableCell className="font-semibold text-green-600">{customer.revenue}</TableCell>
-                </PermissionTableColumn>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <PermissionButton feature="customers" variant="outline" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="customers" variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="customers" variant="outline" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </PermissionButton>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+        </Space>
+      }
+    >
+      <Row gutter={[16, 16]}>
+        {customers.map((customer) => (
+          <Col key={customer.id} span={24}>
+            <Card size="small" hoverable>
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Space>
+                    <Avatar icon={<BuildOutlined />} />
+                    <div>
+                      <Title level={5} style={{ margin: 0 }}>{customer.name}</Title>
+                      <Text type="secondary">{customer.email}</Text>
+                    </div>
+                  </Space>
+                </Col>
+                
+                <Col>
+                  <Space>
+                    {getTierTag(customer.tier)}
+                    {getStatusTag(customer.status)}
+                    
+                    <PermissionGuard feature="analytics">
+                      <Text strong style={{ color: '#52c41a' }}>{customer.revenue}</Text>
+                    </PermissionGuard>
+                    
+                    <Space>
+                      <PermissionGuard feature="customers">
+                        <Button type="text" icon={<EyeOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="customers">
+                        <Button type="text" icon={<EditOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="customers">
+                        <Button type="text" icon={<MoreOutlined />} size="small" />
+                      </PermissionGuard>
+                    </Space>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        ))}
+      </Row>
     </Card>
   );
 };
@@ -214,83 +212,84 @@ export const APIManagementTable: React.FC = () => {
     { id: 5, name: 'Notification API', endpoint: '/api/notifications', method: 'POST', status: 'Active', requests: '1.5M', rate: '800/min' },
   ];
 
-  const getMethodBadge = (method: string) => {
+  const getMethodTag = (method: string) => {
     const methodColors = {
-      'GET': 'bg-green-100 text-green-800',
-      'POST': 'bg-blue-100 text-blue-800',
-      'PUT': 'bg-yellow-100 text-yellow-800',
-      'DELETE': 'bg-red-100 text-red-800',
+      'GET': 'green',
+      'POST': 'blue',
+      'PUT': 'orange',
+      'DELETE': 'red',
     };
     
     return (
-      <Badge className={methodColors[method as keyof typeof methodColors] || 'bg-gray-100 text-gray-800'}>
+      <Tag color={methodColors[method as keyof typeof methodColors] || 'default'}>
         {method}
-      </Badge>
+      </Tag>
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusTag = (status: string) => {
     const statusColors = {
-      'Active': 'bg-green-100 text-green-800',
-      'Maintenance': 'bg-yellow-100 text-yellow-800',
-      'Inactive': 'bg-red-100 text-red-800',
+      'Active': 'green',
+      'Maintenance': 'orange',
+      'Inactive': 'red',
     };
     
     return (
-      <Badge className={statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800'}>
+      <Tag color={statusColors[status as keyof typeof statusColors] || 'default'}>
         {status}
-      </Badge>
+      </Tag>
     );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Globe className="w-5 h-5" />
+    <Card 
+      title={
+        <Space>
+          <GlobalOutlined />
           <span>API Management</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>API Name</TableHead>
-              <TableHead>Endpoint</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Requests</TableHead>
-              <TableHead>Rate Limit</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {apis.map((api) => (
-              <TableRow key={api.id}>
-                <TableCell className="font-medium">{api.name}</TableCell>
-                <TableCell className="font-mono text-sm">{api.endpoint}</TableCell>
-                <TableCell>{getMethodBadge(api.method)}</TableCell>
-                <TableCell>{getStatusBadge(api.status)}</TableCell>
-                <TableCell className="font-semibold">{api.requests}</TableCell>
-                <TableCell className="font-semibold text-blue-600">{api.rate}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <PermissionButton feature="api" variant="outline" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="api" variant="outline" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="api" variant="outline" size="sm">
-                      <Settings className="w-4 h-4" />
-                    </PermissionButton>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+        </Space>
+      }
+    >
+      <Row gutter={[16, 16]}>
+        {apis.map((api) => (
+          <Col key={api.id} span={24}>
+            <Card size="small" hoverable>
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Space>
+                    <Avatar icon={<GlobalOutlined />} />
+                    <div>
+                      <Title level={5} style={{ margin: 0 }}>{api.name}</Title>
+                      <Text type="secondary" code>{api.endpoint}</Text>
+                    </div>
+                  </Space>
+                </Col>
+                
+                <Col>
+                  <Space>
+                    {getMethodTag(api.method)}
+                    {getStatusTag(api.status)}
+                    <Text strong>{api.requests}</Text>
+                    <Text strong style={{ color: '#1890ff' }}>{api.rate}</Text>
+                    
+                    <Space>
+                      <PermissionGuard feature="api">
+                        <Button type="text" icon={<EyeOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="api">
+                        <Button type="text" icon={<EditOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="api">
+                        <Button type="text" icon={<SettingOutlined />} size="small" />
+                      </PermissionGuard>
+                    </Space>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        ))}
+      </Row>
     </Card>
   );
 };
@@ -304,80 +303,80 @@ export const TenantManagementTable: React.FC = () => {
     { id: 5, name: 'Local Shop', subdomain: 'local', users: 10, status: 'Active', plan: 'Basic', revenue: '$2,000' },
   ];
 
-  const getPlanBadge = (plan: string) => {
+  const getPlanTag = (plan: string) => {
     const planColors = {
-      'Basic': 'bg-gray-100 text-gray-800',
-      'Premium': 'bg-blue-100 text-blue-800',
-      'Enterprise': 'bg-purple-100 text-purple-800',
+      'Basic': 'default',
+      'Premium': 'blue',
+      'Enterprise': 'purple',
     };
     
     return (
-      <Badge className={planColors[plan as keyof typeof planColors] || 'bg-gray-100 text-gray-800'}>
+      <Tag color={planColors[plan as keyof typeof planColors] || 'default'}>
         {plan}
-      </Badge>
+      </Tag>
     );
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusTag = (status: string) => {
     return (
-      <Badge variant={status === 'Active' ? 'default' : 'secondary'}>
+      <Tag color={status === 'Active' ? 'green' : 'red'}>
         {status}
-      </Badge>
+      </Tag>
     );
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Building className="w-5 h-5" />
+    <Card 
+      title={
+        <Space>
+          <BuildOutlined />
           <span>Tenant Management</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tenant Name</TableHead>
-              <TableHead>Subdomain</TableHead>
-              <TableHead>Users</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Plan</TableHead>
-              <PermissionTableColumn feature="analytics">
-                <TableHead>Revenue</TableHead>
-              </PermissionTableColumn>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tenants.map((tenant) => (
-              <TableRow key={tenant.id}>
-                <TableCell className="font-medium">{tenant.name}</TableCell>
-                <TableCell className="font-mono text-sm">{tenant.subdomain}</TableCell>
-                <TableCell className="font-semibold">{tenant.users}</TableCell>
-                <TableCell>{getStatusBadge(tenant.status)}</TableCell>
-                <TableCell>{getPlanBadge(tenant.plan)}</TableCell>
-                <PermissionTableColumn feature="analytics">
-                  <TableCell className="font-semibold text-green-600">{tenant.revenue}</TableCell>
-                </PermissionTableColumn>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <PermissionButton feature="tenants" variant="outline" size="sm" requireFullAccess>
-                      <Eye className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="tenants" variant="outline" size="sm" requireFullAccess>
-                      <Edit className="w-4 h-4" />
-                    </PermissionButton>
-                    <PermissionButton feature="tenants" variant="outline" size="sm" requireFullAccess>
-                      <Settings className="w-4 h-4" />
-                    </PermissionButton>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
+        </Space>
+      }
+    >
+      <Row gutter={[16, 16]}>
+        {tenants.map((tenant) => (
+          <Col key={tenant.id} span={24}>
+            <Card size="small" hoverable>
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Space>
+                    <Avatar icon={<BuildOutlined />} />
+                    <div>
+                      <Title level={5} style={{ margin: 0 }}>{tenant.name}</Title>
+                      <Text type="secondary" code>{tenant.subdomain}</Text>
+                    </div>
+                  </Space>
+                </Col>
+                
+                <Col>
+                  <Space>
+                    <Text strong>{tenant.users} users</Text>
+                    {getStatusTag(tenant.status)}
+                    {getPlanTag(tenant.plan)}
+                    
+                    <PermissionGuard feature="analytics">
+                      <Text strong style={{ color: '#52c41a' }}>{tenant.revenue}</Text>
+                    </PermissionGuard>
+                    
+                    <Space>
+                      <PermissionGuard feature="tenants" requireFullAccess>
+                        <Button type="text" icon={<EyeOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="tenants" requireFullAccess>
+                        <Button type="text" icon={<EditOutlined />} size="small" />
+                      </PermissionGuard>
+                      <PermissionGuard feature="tenants" requireFullAccess>
+                        <Button type="text" icon={<SettingOutlined />} size="small" />
+                      </PermissionGuard>
+                    </Space>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
+        ))}
+      </Row>
     </Card>
   );
 };

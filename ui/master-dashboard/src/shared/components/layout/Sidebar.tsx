@@ -26,7 +26,7 @@ import { motion } from 'motion/react';
 import { Button, Badge, cn } from '../ui';
 import { I3MLogo } from '../common/I3MLogo';
 import { routes, RouteId } from '@/app/router';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 interface SidebarProps {
   activeSection?: RouteId;
