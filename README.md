@@ -7,14 +7,12 @@ I3M Platform là một nền tảng microservices hiện đại, cung cấp gi�
 ```
 i3m-platform/
 ├── core-services/          # Core Services (API Gateway, Auth, User)
-├── erp-services/           # ERP Services (Finance, HRM, Inventory, etc.)
-├── analytics-services/     # Analytics Services (AI, ML, Analytics)
-├── content-services/       # Content Services (CMS, Media, Metadata)
-├── industry-services/      # Industry Services (Healthcare, Agriculture)
-├── infrastructure-services/ # Infrastructure Services (Security, Monitoring)
-├── integration-services/   # Integration Services (API Docs, Currency)
-├── marketplace-services/   # Marketplace Services (Templates)
-├── shared-services/        # Shared Services (Notification, Billing)
+├── erp-services/           # ERP Services (Commerce, CMS, Analytics, HR, Finance, CRM, Inventory, Procurement)
+├── industry-services/      # Industry Services (Ecommerce, Agriculture, Healthcare, Retail, Restaurant, Manufacturing)
+├── infrastructure-services/ # Infrastructure Services (Security, Monitoring, Load Balancer, Cost Optimization)
+├── integration-services/   # Integration Services (API Docs, Currency, Integration)
+├── marketplace-services/   # Marketplace Services (Templates, Installation, Preview)
+├── shared-services/        # Shared Services (Notification, Billing, Workflow)
 ├── shared/                 # Shared libraries, configs, schemas
 ├── deployments/           # Kubernetes manifests, Docker configs
 ├── terraform/             # Infrastructure as Code
@@ -24,11 +22,20 @@ i3m-platform/
 
 ## 🏗️ Kiến Trúc Tổng Thể
 
-- **50 Microservices** được phân chia thành 9 nhóm chính
+### **🎯 Business Operating System (BOS) Philosophy**
+I3M Platform hoạt động như một hệ điều hành kinh doanh:
+- **ERP Services**: Kernel (Core Business Logic)
+- **Industry Services**: Applications (Industry-specific)
+- **Core Services**: System Services (Infrastructure)
+- **Integration Layer**: API Gateway, Service Mesh, Event Bus
+
+### **📊 Architecture Layers**
+- **50+ Microservices** được phân chia thành 6 nhóm chính
 - **Multi-tenant Architecture** với row-based isolation
 - **Event-driven Communication** sử dụng Kafka
 - **Container Orchestration** với Kubernetes
 - **Multi-database Strategy** (PostgreSQL, MongoDB, Redis, TimescaleDB)
+- **Headless Multi-channel Commerce** cho Industry Services
 
 ## 🛠️ Công Nghệ Sử Dụng
 

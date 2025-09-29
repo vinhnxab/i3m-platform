@@ -1,10 +1,17 @@
 # 🚀 I3M Platform - Tài Liệu Hệ Thống Toàn Diện
 
-**Version:** 1.1.0  
-**Last Updated:** 28/09/2025  
+**Version:** 1.2.0  
+**Last Updated:** 29/09/2025  
 **Author:** Grok AI (xAI)  
 
 ## Changelog
+- **1.2.0 (29/09/2025)**: 
+  - **Architecture Restructure**: Migrated to Business Operating System (BOS) philosophy
+  - **ERP Services**: Core business logic (Commerce, CMS, Analytics, HR, Finance, CRM, Inventory, Procurement)
+  - **Industry Services**: Industry-specific applications (Ecommerce, Agriculture, Healthcare, Retail, Restaurant, Manufacturing)
+  - **Headless Multi-channel Commerce**: Ecommerce service moved to Industry Services
+  - **Service Consolidation**: Analytics and Content services integrated into ERP Services
+  - **API Gateway Updates**: New routing structure for ERP and Industry services
 - **1.1.0 (28/09/2025)**: 
   - Cập nhật ports thực tế dựa trên triển khai Kubernetes hoạt động.
   - Điều chỉnh ports để phản ánh cấu hình thực tế của hệ thống.
@@ -158,40 +165,37 @@ Hệ thống gồm **50 microservices** (giảm từ 60 để tối ưu granular
 | Auth Service | 3008 | Go 1.21, Gin 1.9, Keycloak 22.0 | PostgreSQL 15 | JWT, OAuth2, SSO, session management |
 | User Service | 3009 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | User profiles, multi-tenant isolation, preferences |
 
-### 2.2 ERP Services
+### 2.2 ERP Services (Core Business Logic)
 
 | Service | Port | Technology | Database | Chức Năng |
 |---------|------|------------|----------|-----------|
+| Commerce Service | 3014 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Business logic, product catalog, order management |
+| CMS Service | 3021 | Node.js 20, Express 4.18 | MongoDB 7.0 | Headless CMS, content management, media processing |
+| Analytics Service | 3019 | Java 17, Spring Boot 3.1 | PostgreSQL 15, TimescaleDB 2.11 | Business intelligence, dashboards, KPI tracking |
+| HR Service | 3029 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Employee management, payroll, HR analytics |
 | Finance Service | 3016 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Transactions, accounting, Stripe integration |
-| HRM Service | 3029 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Employee management, payroll, HR analytics |
+| CRM Service | 3015 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Leads, sales pipeline, HubSpot integration |
 | Inventory Service | 3030 | Go 1.21, Gin 1.9 | PostgreSQL 15, Redis 7.0 | Stock tracking, real-time updates, alerts |
 | Procurement Service | 3013 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Vendor management, purchase orders |
-| E-commerce Service | 3014 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Product catalog, cart, payments (Stripe) |
-| CRM Service | 3015 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Leads, sales pipeline, HubSpot integration |
 
-### 2.3 Analytics Services
+### 2.3 Industry Services (Industry-specific Applications)
+
+| Service | Port | Technology | Database | Chức Năng |
+|---------|------|------------|----------|-----------|
+| Ecommerce Service | 3014 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Headless multi-channel commerce, Web/Mobile/Social/Marketplace |
+| Agriculture Service | 3025 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Farm management, crop tracking, IoT integration |
+| Healthcare Service | 3026 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Patient management, medical records, telemedicine |
+| Retail Service | 3027 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | POS system, inventory management, customer analytics |
+| Restaurant Service | 3028 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | Dine-in, delivery, takeaway, kitchen management |
+| Manufacturing Service | 3031 | Java 17, Spring Boot 3.1 | PostgreSQL 15, Redis 7.0 | B2B/B2C, distributor management, production planning |
+
+### 2.4 Analytics Services (AI/ML)
 
 | Service | Port | Technology | Database | Chức Năng |
 |---------|------|------------|----------|-----------|
 | AI Service | 3017 | Python 3.11, FastAPI 0.100, TensorFlow 2.15 | MongoDB 7.0 | NLP, predictive analytics, model deployment |
 | ML Pipeline | 3018 | Python 3.11, FastAPI 0.100 | MongoDB 7.0 | Data preprocessing, model training |
-| Analytics Service | 3019 | Java 17, Spring Boot 3.1 | PostgreSQL 15, TimescaleDB 2.11 | BI, dashboards, KPI tracking |
 | User Analytics | 3020 | Python 3.11, FastAPI 0.100 | MongoDB 7.0, TimescaleDB 2.11 | Behavior analysis, segmentation |
-
-### 2.4 Content Services
-
-| Service | Port | Technology | Database | Chức Năng |
-|---------|------|------------|----------|-----------|
-| Content Service | 3021 | Node.js 20, Express 4.18 | MongoDB 7.0 | Headless CMS, blog, publishing, SEO |
-| Media Service | 3022 | Node.js 20, Express 4.18 | MongoDB 7.0 | Media upload, processing, CDN (AWS S3) |
-| Metadata Service | 3023 | Node.js 20, Express 4.18 | MongoDB 7.0 | SEO metadata, schema markup |
-
-### 2.5 Industry Services
-
-| Service | Port | Technology | Database | Chức Năng |
-|---------|------|------------|----------|-----------|
-| Healthcare Service | 3026 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Patient records, HIPAA compliance |
-| Agriculture Service | 3025 | Java 17, Spring Boot 3.1 | PostgreSQL 15 | Farm tracking, weather integration |
 
 ### 2.6 Infrastructure Services
 

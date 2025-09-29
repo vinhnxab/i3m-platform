@@ -167,13 +167,22 @@ func (gw *APIGateway) setupRouter() {
 		protected := v1.Group("/")
 		protected.Use(gw.authMiddleware())
 		{
-			// ERP Services routes
-			protected.Any("/finance/*path", gw.proxyToService("FINANCE_SERVICE", "http://localhost:3028"))
-			protected.Any("/hrm/*path", gw.proxyToService("HRM_SERVICE", "http://localhost:3029"))
-			protected.Any("/inventory/*path", gw.proxyToService("INVENTORY_SERVICE", "http://localhost:3030"))
-			protected.Any("/procurement/*path", gw.proxyToService("PROCUREMENT_SERVICE", "http://localhost:3031"))
-			protected.Any("/ecommerce/*path", gw.proxyToService("ECOMMERCE_SERVICE", "http://localhost:3032"))
-			protected.Any("/crm/*path", gw.proxyToService("CRM_SERVICE", "http://localhost:3033"))
+			// Core ERP Services routes
+			protected.Any("/core/commerce/*path", gw.proxyToService("COMMERCE_SERVICE", "http://localhost:3014"))
+			protected.Any("/core/cms/*path", gw.proxyToService("CMS_SERVICE", "http://localhost:3021"))
+			protected.Any("/core/finance/*path", gw.proxyToService("FINANCE_SERVICE", "http://localhost:3028"))
+			protected.Any("/core/hrm/*path", gw.proxyToService("HRM_SERVICE", "http://localhost:3029"))
+			protected.Any("/core/inventory/*path", gw.proxyToService("INVENTORY_SERVICE", "http://localhost:3030"))
+			protected.Any("/core/procurement/*path", gw.proxyToService("PROCUREMENT_SERVICE", "http://localhost:3031"))
+			protected.Any("/core/crm/*path", gw.proxyToService("CRM_SERVICE", "http://localhost:3033"))
+
+			// Industry Services routes
+			protected.Any("/industry/ecommerce/*path", gw.proxyToService("INDUSTRY_ECOMMERCE_SERVICE", "http://localhost:3014"))
+			protected.Any("/industry/retail/*path", gw.proxyToService("RETAIL_SERVICE", "http://localhost:3036"))
+			protected.Any("/industry/restaurant/*path", gw.proxyToService("RESTAURANT_SERVICE", "http://localhost:3037"))
+			protected.Any("/industry/healthcare/*path", gw.proxyToService("HEALTHCARE_SERVICE", "http://localhost:3034"))
+			protected.Any("/industry/agriculture/*path", gw.proxyToService("AGRICULTURE_SERVICE", "http://localhost:3035"))
+			protected.Any("/industry/manufacturing/*path", gw.proxyToService("MANUFACTURING_SERVICE", "http://localhost:3038"))
 
 			// Analytics Services routes
 			protected.Any("/ai/*path", gw.proxyToService("AI_SERVICE", "http://localhost:3017"))
@@ -181,14 +190,13 @@ func (gw *APIGateway) setupRouter() {
 			protected.Any("/analytics/*path", gw.proxyToService("ANALYTICS_SERVICE", "http://localhost:3019"))
 			protected.Any("/user-analytics/*path", gw.proxyToService("USER_ANALYTICS_SERVICE", "http://localhost:3020"))
 
-			// Content Services routes
+			// Legacy Content Services routes (deprecated - use /core/cms)
 			protected.Any("/content/*path", gw.proxyToService("CONTENT_SERVICE", "http://localhost:3021"))
 			protected.Any("/media/*path", gw.proxyToService("MEDIA_SERVICE", "http://localhost:3022"))
 			protected.Any("/metadata/*path", gw.proxyToService("METADATA_SERVICE", "http://localhost:3023"))
 
-			// Industry Services routes
-			protected.Any("/healthcare/*path", gw.proxyToService("HEALTHCARE_SERVICE", "http://localhost:3034"))
-			protected.Any("/agriculture/*path", gw.proxyToService("AGRICULTURE_SERVICE", "http://localhost:3035"))
+			// Legacy Ecommerce route (deprecated - use /core/commerce or /industry/ecommerce)
+			protected.Any("/ecommerce/*path", gw.proxyToService("ECOMMERCE_SERVICE", "http://localhost:3032"))
 
 			// Infrastructure Services routes
 			protected.Any("/security/*path", gw.proxyToService("SECURITY_SERVICE", "http://localhost:3040"))
