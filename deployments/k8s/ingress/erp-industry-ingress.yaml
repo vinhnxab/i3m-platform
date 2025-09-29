@@ -1,0 +1,206 @@
+# ERP and Industry Services Ingress
+# API Gateway routing for new architecture
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: erp-industry-ingress
+  namespace: i3m-platform
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - api.i3m.com
+    secretName: api-gateway-tls
+  rules:
+  # ERP Services (Core Business Logic)
+  - host: api.i3m.com
+    http:
+      paths:
+      # Commerce Service (Core Business)
+      - path: /api/v1/erp/commerce
+        pathType: Prefix
+        backend:
+          service:
+            name: commerce-service
+            port:
+              number: 3014
+      # CMS Service (Core Business)
+      - path: /api/v1/erp/cms
+        pathType: Prefix
+        backend:
+          service:
+            name: cms-service
+            port:
+              number: 3021
+      # Analytics Service (Core Business)
+      - path: /api/v1/erp/analytics
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 3019
+      # HR Service (Core Business)
+      - path: /api/v1/erp/hr
+        pathType: Prefix
+        backend:
+          service:
+            name: hr-service
+            port:
+              number: 3029
+      # Finance Service (Core Business)
+      - path: /api/v1/erp/finance
+        pathType: Prefix
+        backend:
+          service:
+            name: finance-service
+            port:
+              number: 3016
+      # CRM Service (Core Business)
+      - path: /api/v1/erp/crm
+        pathType: Prefix
+        backend:
+          service:
+            name: crm-service
+            port:
+              number: 3015
+      # Inventory Service (Core Business)
+      - path: /api/v1/erp/inventory
+        pathType: Prefix
+        backend:
+          service:
+            name: inventory-service
+            port:
+              number: 3030
+      # Procurement Service (Core Business)
+      - path: /api/v1/erp/procurement
+        pathType: Prefix
+        backend:
+          service:
+            name: procurement-service
+            port:
+              number: 3013
+      # Storage Service (Core Business)
+      - path: /api/v1/erp/storage
+        pathType: Prefix
+        backend:
+          service:
+            name: storage-service
+            port:
+              number: 3032
+
+  # Industry Services (Industry-specific Applications)
+  - host: api.i3m.com
+    http:
+      paths:
+      # Ecommerce Service (Headless Multi-channel)
+      - path: /api/v1/industry/ecommerce
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-service
+            port:
+              number: 3014
+      # Agriculture Service (Farm Management)
+      - path: /api/v1/industry/agriculture
+        pathType: Prefix
+        backend:
+          service:
+            name: agriculture-service
+            port:
+              number: 3025
+      # Healthcare Service (Clinic + Telemedicine)
+      - path: /api/v1/industry/healthcare
+        pathType: Prefix
+        backend:
+          service:
+            name: healthcare-service
+            port:
+              number: 3026
+      # Retail Service (POS + Online + Mobile)
+      - path: /api/v1/industry/retail
+        pathType: Prefix
+        backend:
+          service:
+            name: retail-service
+            port:
+              number: 3027
+      # Restaurant Service (Dine-in + Delivery + Takeaway)
+      - path: /api/v1/industry/restaurant
+        pathType: Prefix
+        backend:
+          service:
+            name: restaurant-service
+            port:
+              number: 3028
+      # Manufacturing Service (B2B + B2C + Distributor)
+      - path: /api/v1/industry/manufacturing
+        pathType: Prefix
+        backend:
+          service:
+            name: manufacturing-service
+            port:
+              number: 3031
+
+---
+# Legacy Routes (Deprecated - for backward compatibility)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-routes-ingress
+  namespace: i3m-platform
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - api.i3m.com
+    secretName: api-gateway-tls
+  rules:
+  # Legacy Content Services (Deprecated - use /api/v1/erp/cms)
+  - host: api.i3m.com
+    http:
+      paths:
+      - path: /api/v1/content
+        pathType: Prefix
+        backend:
+          service:
+            name: cms-service
+            port:
+              number: 3021
+      - path: /api/v1/media
+        pathType: Prefix
+        backend:
+          service:
+            name: media-service
+            port:
+              number: 3022
+      - path: /api/v1/metadata
+        pathType: Prefix
+        backend:
+          service:
+            name: metadata-service
+            port:
+              number: 3023
+      # Legacy Ecommerce route (Deprecated - use /api/v1/erp/commerce or /api/v1/industry/ecommerce)
+      - path: /api/v1/ecommerce
+        pathType: Prefix
+        backend:
+          service:
+            name: ecommerce-service
+            port:
+              number: 3014

@@ -1,0 +1,502 @@
+# Industry Services Deployments
+# Industry-specific Applications
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-service
+  namespace: i3m-platform
+  labels:
+    app: ecommerce-service
+    tier: industry
+    component: headless-commerce
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecommerce-service
+  template:
+    metadata:
+      labels:
+        app: ecommerce-service
+        tier: industry
+        component: headless-commerce
+    spec:
+      containers:
+      - name: ecommerce-service
+        image: i3m-platform-ecommerce-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3014
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3014"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        - name: COMMERCE_SERVICE_URL
+          value: "http://commerce-service:3014"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-service
+  namespace: i3m-platform
+  labels:
+    app: ecommerce-service
+    tier: industry
+spec:
+  selector:
+    app: ecommerce-service
+  ports:
+  - port: 3014
+    targetPort: 3014
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agriculture-service
+  namespace: i3m-platform
+  labels:
+    app: agriculture-service
+    tier: industry
+    component: farm-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agriculture-service
+  template:
+    metadata:
+      labels:
+        app: agriculture-service
+        tier: industry
+        component: farm-management
+    spec:
+      containers:
+      - name: agriculture-service
+        image: i3m-platform-agriculture-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3025
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3025"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3025
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3025
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agriculture-service
+  namespace: i3m-platform
+  labels:
+    app: agriculture-service
+    tier: industry
+spec:
+  selector:
+    app: agriculture-service
+  ports:
+  - port: 3025
+    targetPort: 3025
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-service
+  namespace: i3m-platform
+  labels:
+    app: healthcare-service
+    tier: industry
+    component: clinic-telemedicine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthcare-service
+  template:
+    metadata:
+      labels:
+        app: healthcare-service
+        tier: industry
+        component: clinic-telemedicine
+    spec:
+      containers:
+      - name: healthcare-service
+        image: i3m-platform-healthcare-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3026
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3026"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3026
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3026
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-service
+  namespace: i3m-platform
+  labels:
+    app: healthcare-service
+    tier: industry
+spec:
+  selector:
+    app: healthcare-service
+  ports:
+  - port: 3026
+    targetPort: 3026
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: retail-service
+  namespace: i3m-platform
+  labels:
+    app: retail-service
+    tier: industry
+    component: pos-online-mobile
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: retail-service
+  template:
+    metadata:
+      labels:
+        app: retail-service
+        tier: industry
+        component: pos-online-mobile
+    spec:
+      containers:
+      - name: retail-service
+        image: i3m-platform-retail-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3027
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3027"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3027
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3027
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: retail-service
+  namespace: i3m-platform
+  labels:
+    app: retail-service
+    tier: industry
+spec:
+  selector:
+    app: retail-service
+  ports:
+  - port: 3027
+    targetPort: 3027
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-service
+  namespace: i3m-platform
+  labels:
+    app: restaurant-service
+    tier: industry
+    component: dine-in-delivery-takeaway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: restaurant-service
+  template:
+    metadata:
+      labels:
+        app: restaurant-service
+        tier: industry
+        component: dine-in-delivery-takeaway
+    spec:
+      containers:
+      - name: restaurant-service
+        image: i3m-platform-restaurant-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3028
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3028"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3028
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3028
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: restaurant-service
+  namespace: i3m-platform
+  labels:
+    app: restaurant-service
+    tier: industry
+spec:
+  selector:
+    app: restaurant-service
+  ports:
+  - port: 3028
+    targetPort: 3028
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manufacturing-service
+  namespace: i3m-platform
+  labels:
+    app: manufacturing-service
+    tier: industry
+    component: b2b-b2c-distributor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: manufacturing-service
+  template:
+    metadata:
+      labels:
+        app: manufacturing-service
+        tier: industry
+        component: b2b-b2c-distributor
+    spec:
+      containers:
+      - name: manufacturing-service
+        image: i3m-platform-manufacturing-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3031
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3031"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3031
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3031
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: manufacturing-service
+  namespace: i3m-platform
+  labels:
+    app: manufacturing-service
+    tier: industry
+spec:
+  selector:
+    app: manufacturing-service
+  ports:
+  - port: 3031
+    targetPort: 3031
+    protocol: TCP
+    name: http
+  type: ClusterIP

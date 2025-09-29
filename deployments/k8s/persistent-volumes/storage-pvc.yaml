@@ -1,0 +1,18 @@
+# Storage Service Persistent Volume Claim
+# For file storage and thumbnails
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: storage-pvc
+  namespace: i3m-platform
+  labels:
+    app: storage-service
+    tier: erp
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-path

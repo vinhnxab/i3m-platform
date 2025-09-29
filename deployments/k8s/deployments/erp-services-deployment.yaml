@@ -1,0 +1,345 @@
+# ERP Services Deployments
+# Core Business Logic Services
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: commerce-service
+  namespace: i3m-platform
+  labels:
+    app: commerce-service
+    tier: erp
+    component: core-business
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: commerce-service
+  template:
+    metadata:
+      labels:
+        app: commerce-service
+        tier: erp
+        component: core-business
+    spec:
+      containers:
+      - name: commerce-service
+        image: i3m-platform-commerce-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3014
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3014"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: commerce-service
+  namespace: i3m-platform
+  labels:
+    app: commerce-service
+    tier: erp
+spec:
+  selector:
+    app: commerce-service
+  ports:
+  - port: 3014
+    targetPort: 3014
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cms-service
+  namespace: i3m-platform
+  labels:
+    app: cms-service
+    tier: erp
+    component: core-business
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cms-service
+  template:
+    metadata:
+      labels:
+        app: cms-service
+        tier: erp
+        component: core-business
+    spec:
+      containers:
+      - name: cms-service
+        image: i3m-platform-cms-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3021
+          name: http
+        env:
+        - name: PORT
+          value: "3021"
+        - name: NODE_ENV
+          value: "production"
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: MONGODB_URI
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3021
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3021
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cms-service
+  namespace: i3m-platform
+  labels:
+    app: cms-service
+    tier: erp
+spec:
+  selector:
+    app: cms-service
+  ports:
+  - port: 3021
+    targetPort: 3021
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: i3m-platform
+  labels:
+    app: analytics-service
+    tier: erp
+    component: core-business
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: analytics-service
+  template:
+    metadata:
+      labels:
+        app: analytics-service
+        tier: erp
+        component: core-business
+    spec:
+      containers:
+      - name: analytics-service
+        image: i3m-platform-analytics-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3019
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3019"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: TIMESCALE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: TIMESCALE_URL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3019
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3019
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: i3m-platform
+  labels:
+    app: analytics-service
+    tier: erp
+spec:
+  selector:
+    app: analytics-service
+  ports:
+  - port: 3019
+    targetPort: 3019
+    protocol: TCP
+    name: http
+  type: ClusterIP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-service
+  namespace: i3m-platform
+  labels:
+    app: storage-service
+    tier: erp
+    component: core-business
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: storage-service
+  template:
+    metadata:
+      labels:
+        app: storage-service
+        tier: erp
+        component: core-business
+    spec:
+      containers:
+      - name: storage-service
+        image: i3m-platform-storage-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3032
+          name: http
+        env:
+        - name: SERVER_PORT
+          value: "3032"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DATABASE_URL
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: REDIS_URL
+        - name: STORAGE_UPLOAD_PATH
+          value: "/app/storage/uploads"
+        - name: STORAGE_THUMBNAIL_PATH
+          value: "/app/storage/thumbnails"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3032
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3032
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: storage-volume
+          mountPath: /app/storage
+      volumes:
+      - name: storage-volume
+        persistentVolumeClaim:
+          claimName: storage-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage-service
+  namespace: i3m-platform
+  labels:
+    app: storage-service
+    tier: erp
+spec:
+  selector:
+    app: storage-service
+  ports:
+  - port: 3032
+    targetPort: 3032
+    protocol: TCP
+    name: http
+  type: ClusterIP
