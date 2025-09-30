@@ -1,6 +1,6 @@
-package com.i3m.ecommerce.repository;
+package com.i3m.commerce.repository;
 
-import com.i3m.ecommerce.model.Order;
+import com.i3m.commerce.model.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,8 +1,8 @@
-package com.i3m.ecommerce.controller;
+package com.i3m.commerce.controller;
 
-import com.i3m.ecommerce.dto.ProductDto;
-import com.i3m.ecommerce.dto.OrderDto;
-import com.i3m.ecommerce.service.CommerceService;
+import com.i3m.commerce.dto.ProductDto;
+import com.i3m.commerce.dto.OrderDto;
+import com.i3m.commerce.service.CommerceService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

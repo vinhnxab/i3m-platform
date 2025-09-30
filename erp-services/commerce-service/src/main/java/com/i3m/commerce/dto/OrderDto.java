@@ -1,15 +1,16 @@
-package com.i3m.ecommerce.dto;
+package com.i3m.commerce.dto;
 
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public class OrderDto {
-    private Long id;
+    private UUID id;
     
     @NotNull(message = "Customer ID is required")
-    private Long customerId;
+    private UUID customerId;
     
     private String orderNumber;
     
@@ -32,7 +33,7 @@ public class OrderDto {
     // Constructors
     public OrderDto() {}
     
-    public OrderDto(Long customerId, String orderNumber, BigDecimal totalAmount, String status) {
+    public OrderDto(UUID customerId, String orderNumber, BigDecimal totalAmount, String status) {
         this.customerId = customerId;
         this.orderNumber = orderNumber;
         this.totalAmount = totalAmount;
@@ -40,19 +41,19 @@ public class OrderDto {
     }
     
     // Getters and Setters
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
     
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
     
-    public Long getCustomerId() {
+    public UUID getCustomerId() {
         return customerId;
     }
     
-    public void setCustomerId(Long customerId) {
+    public void setCustomerId(UUID customerId) {
         this.customerId = customerId;
     }
     
@@ -130,7 +131,7 @@ public class OrderDto {
     
     // Inner class for OrderItem
     public static class OrderItemDto {
-        private Long productId;
+        private UUID productId;
         private String productName;
         private Integer quantity;
         private BigDecimal unitPrice;
@@ -139,7 +140,7 @@ public class OrderDto {
         // Constructors
         public OrderItemDto() {}
         
-        public OrderItemDto(Long productId, String productName, Integer quantity, BigDecimal unitPrice) {
+        public OrderItemDto(UUID productId, String productName, Integer quantity, BigDecimal unitPrice) {
             this.productId = productId;
             this.productName = productName;
             this.quantity = quantity;
@@ -148,11 +149,11 @@ public class OrderDto {
         }
         
         // Getters and Setters
-        public Long getProductId() {
+        public UUID getProductId() {
             return productId;
         }
         
-        public void setProductId(Long productId) {
+        public void setProductId(UUID productId) {
             this.productId = productId;
         }
         

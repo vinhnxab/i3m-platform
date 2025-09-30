@@ -1,13 +1,14 @@
-package com.i3m.ecommerce.dto;
+package com.i3m.commerce.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class ProductDto {
-    private Long id;
+    private UUID id;
     
     @NotBlank(message = "Product name is required")
     private String name;
@@ -56,11 +57,11 @@ public class ProductDto {
     }
     
     // Getters and Setters
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
     
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
     

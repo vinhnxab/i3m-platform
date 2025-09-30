@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: commerce-service
+  namespace: i3m-platform
+  labels:
+    app: commerce-service
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: commerce-service
+  template:
+    metadata:
+      labels:
+        app: commerce-service
+        tier: backend
+    spec:
+      containers:
+      - name: commerce-service
+        image: commerce-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3014
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          value: "i3m_password"
+        - name: REDIS_DATABASE
+          value: "2"
+        - name: STRIPE_SECRET_KEY
+          value: "sk_test_your_stripe_secret_key"
+        - name: STRIPE_WEBHOOK_SECRET
+          value: "whsec_your_webhook_secret"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 180
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 3014
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: commerce-service
+  namespace: i3m-platform
+  labels:
+    app: commerce-service
+    tier: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3014
+    targetPort: 3014
+    protocol: TCP
+    name: http
+  selector:
+    app: commerce-service

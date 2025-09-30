@@ -1,7 +1,7 @@
-package com.i3m.ecommerce.service;
+package com.i3m.commerce.service;
 
-import com.i3m.ecommerce.dto.ProductDto;
-import com.i3m.ecommerce.dto.OrderDto;
+import com.i3m.commerce.dto.ProductDto;
+import com.i3m.commerce.dto.OrderDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

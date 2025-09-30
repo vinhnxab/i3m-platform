@@ -1,4 +1,4 @@
-package com.i3m.ecommerce.config;
+package com.i3m.commerce.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

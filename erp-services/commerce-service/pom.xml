@@ -9,10 +9,10 @@
         <relativePath/>
     </parent>
     <groupId>com.i3m</groupId>
-    <artifactId>ecommerce-service</artifactId>
+    <artifactId>commerce-service</artifactId>
     <version>1.0.0</version>
-    <name>ecommerce-service</name>
-    <description>I3M E-commerce Service - Java Spring Boot</description>
+    <name>commerce-service</name>
+    <description>I3M Commerce Service - Java Spring Boot</description>
     <properties>
         <java.version>17</java.version>
     </properties>

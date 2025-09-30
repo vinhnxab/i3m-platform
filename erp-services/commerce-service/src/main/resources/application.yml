@@ -1,9 +1,9 @@
 server:
-  port: 3032
+  port: 3014
 
 spring:
   application:
-    name: ecommerce-service
+    name: commerce-service
   
   datasource:
     url: jdbc:postgresql://postgres-service:5432/i3m_commerce_db?sslmode=disable
@@ -19,7 +19,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: ecommerce
+        default_schema: commerce
   
   data:
     redis:

@@ -26,17 +26,17 @@ RUN addgroup -g 1001 -S ecommerce && \
     adduser -S ecommerce -u 1001 -G ecommerce
 
 # Copy the built JAR
-COPY --from=builder /app/target/ecommerce-service-*.jar app.jar
+COPY --from=builder /app/target/commerce-service-*.jar app.jar
 
 # Change ownership
 RUN chown -R ecommerce:ecommerce /app
 
 USER ecommerce
 
-EXPOSE 3032
+EXPOSE 3014
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3032/actuator/health || exit 1
+    CMD curl -f http://localhost:3014/health || exit 1
 
 CMD ["java", "-jar", "app.jar"]

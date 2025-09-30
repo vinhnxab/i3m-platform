@@ -1,4 +1,4 @@
-package com.i3m.ecommerce.model;
+package com.i3m.commerce.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders", schema = "ecommerce")
+@Table(name = "orders", schema = "commerce")
 public class Order {
     
     @Id
