@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -40,7 +41,7 @@ func InitializeRedis(redisURL string) (*redis.Client, error) {
 	client := redis.NewClient(opt)
 
 	// Test the connection
-	if err := client.Ping(client.Context()).Err(); err != nil {
+	if err := client.Ping(context.Background()).Err(); err != nil {
 		return nil, fmt.Errorf("failed to ping Redis: %w", err)
 	}
 

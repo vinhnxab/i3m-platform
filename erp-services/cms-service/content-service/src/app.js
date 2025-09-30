@@ -176,9 +176,7 @@ async function startServer() {
   }
 }
 
-// Start the server if this file is run directly
-if (require.main === module) {
-  startServer();
-}
+// Start the server always (for Docker/Kubernetes compatibility)
+startServer();
 
 module.exports = app;

@@ -26,7 +26,7 @@ spec:
       containers:
       - name: commerce-service
         image: i3m-platform-commerce-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3014
           name: http
@@ -40,11 +40,29 @@ spec:
             secretKeyRef:
               name: app-secrets
               key: DATABASE_URL
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "i3m_commerce_db"
+        - name: DB_USERNAME
+          value: "i3m_user"
+        - name: DB_PASSWORD
+          value: "i3m_password"
         - name: REDIS_URL
           valueFrom:
             secretKeyRef:
               name: app-secrets
               key: REDIS_URL
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          value: "i3m_password"
+        - name: REDIS_DATABASE
+          value: "2"
         resources:
           requests:
             memory: "256Mi"
@@ -109,7 +127,7 @@ spec:
       containers:
       - name: cms-service
         image: i3m-platform-cms-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3021
           name: http
@@ -192,7 +210,7 @@ spec:
       containers:
       - name: analytics-service
         image: i3m-platform-analytics-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3019
           name: http
@@ -275,7 +293,7 @@ spec:
       containers:
       - name: storage-service
         image: i3m-platform-storage-service:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3032
           name: http
@@ -300,20 +318,20 @@ spec:
           value: "/app/storage/thumbnails"
         resources:
           requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
             memory: "256Mi"
             cpu: "200m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /actuator/health
+            path: /health
             port: 3032
           initialDelaySeconds: 60
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /actuator/health
+            path: /health
             port: 3032
           initialDelaySeconds: 30
           periodSeconds: 10

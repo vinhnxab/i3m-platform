@@ -11,14 +11,12 @@ const logger = winston.createLogger({
   defaultMeta: { service: 'content-service' },
   transports: [
     new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
+    new winston.transports.File({ filename: 'logs/combined.log' }),
+    // Always log to console for Kubernetes/Docker logs
+    new winston.transports.Console({
+      format: winston.format.simple()
+    })
   ]
 });
-
-if (config.env !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.simple()
-  }));
-}
 
 module.exports = logger;

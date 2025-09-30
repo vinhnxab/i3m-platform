@@ -6,8 +6,8 @@ import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
 @EnableCaching
-public class EcommerceServiceApplication {
+public class CommerceServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(EcommerceServiceApplication.class, args);
+        SpringApplication.run(CommerceServiceApplication.class, args);
     }
 }

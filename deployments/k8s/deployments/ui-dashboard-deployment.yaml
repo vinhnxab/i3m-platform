@@ -20,7 +20,7 @@ spec:
       containers:
       - name: ui-dashboard
         image: i3m-platform/ui-dashboard:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
         env:
